@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme {
+  /* === Paleta de Colores Principal === */
+  --color-primary: #1e40af; /* Azul oscuro de tus botones y títulos */
+  --color-primary-hover: #1e3a8a; /* Azul más oscuro para hover */
+  --color-secondary: #0f2557; /* Azul muy oscuro para el fondo izquierdo */
+  --color-accent: #59D2EC; /* Color de acento/info que ya tenías */
+
+  /* === Fondos y Superficies === */
+  --color-background: #F3F4F6; /* Equivalente al bg-gray-100 que usabas */
+  --color-surface: #FFFFFF; /* Para las tarjetas blancas */
+  
+  /* === Textos y Bordes === */
+  --color-text-main: #181D38; /* Color principal de texto */
+  --color-text-muted: #6B7280; /* Para textos secundarios como 'Ingresa a tu cuenta...' */
+  --color-border: #D1D5DB; /* Gris claro para bordes de inputs */
+
+  /* === Menú de módulos === */
+  --color-menu-bg: #181D38;
+  --color-menu-active: #59D2EC;
+  --color-menu-text: #FBFAF7;
+
+  --font-sans: var(--font-sans);
+}
+
+/* Estilos base */
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-text-main);
+}
