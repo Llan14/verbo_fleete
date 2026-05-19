@@ -2,7 +2,7 @@ from app.core.config import settings
 from asyncio.log import logger
 import os
 from openai import AsyncOpenAI
-from openai import AsyncOpenAI, AuthenticationError
+from openai import AsyncOpenAI, AuthenticationError, RateLimitError
 import json
 
 client =AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
@@ -32,8 +32,8 @@ async def _ejecutar_con_reintentos(mensajes, fallback_mock=None, response_format
             else:
                 return response.choices[0].message.content.strip()
                 
-        except AuthenticationError:
-            logger.error("❌ Error de Autenticación con OpenAI (API Key inválida o sin saldo). Usando Mock.")
+        except (AuthenticationError, RateLimitError):
+            logger.error("❌ Error de Autenticación o Cuota con OpenAI (API Key inválida o sin saldo). Usando Mock.")
             return fallback_mock
         except json.JSONDecodeError as e:
             logger.warning(f"⚠️ La IA devolvió un JSON malformado (Intento {intento+1}/{max_retries}): {e}")
@@ -94,14 +94,6 @@ JSON:
 }}
 """
     
-    response = await client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "Experto en francés. JSON estricto."},
-            {"role": "user", "content": prompt}
-        ],
-        response_format={"type": "json_object"}
-    )
     mensajes = [
         {"role": "system", "content": "Experto en francés. JSON estricto."},
         {"role": "user", "content": prompt}
@@ -121,7 +113,6 @@ JSON:
         ]
     }
     
-    return json.loads(response.choices[0].message.content)
     return await _ejecutar_con_reintentos(mensajes, mock_fallback)
 
 async def generar_gramatica_huecos_ia(nivel: str, contexto: str, grupo_verbos: str, mood: str, tense: str):
@@ -203,15 +194,6 @@ JSON ESTRICTO:
 }}
 """
     
-    response = await client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "Experto en pedagogía francesa. Generador de JSON estricto."},
-            {"role": "user", "content": prompt}
-        ],
-        response_format={"type": "json_object"},
-        temperature=0.7
-    )
     mensajes = [
         {"role": "system", "content": "Experto en pedagogía francesa. Generador de JSON estricto."},
         {"role": "user", "content": prompt}
@@ -241,7 +223,6 @@ JSON ESTRICTO:
         ]
     }
     
-    return json.loads(response.choices[0].message.content)
     return await _ejecutar_con_reintentos(mensajes, mock_fallback)
 
 async def generar_verbo_hablar_ia(nivel: str, contexto: str, grupo_verbos: str, mood: str, tense: str):
@@ -265,16 +246,6 @@ JSON:
 }}
 """
     
-    response = await client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "Experto en gramática francesa. Salida en JSON estricto."},
-            {"role": "user", "content": prompt}
-        ],
-        response_format={"type": "json_object"}
-    )
-    
-    return json.loads(response.choices[0].message.content)
     mensajes = [
         {"role": "system", "content": "Experto en gramática francesa. Salida en JSON estricto."},
         {"role": "user", "content": prompt}
@@ -283,7 +254,7 @@ JSON:
         "infinitivo": "parler",
         "mood": mood,
         "tense": tense,
-        "persona": "1ère personne du singulier"
+        "persona": "je"
     }
     return await _ejecutar_con_reintentos(mensajes, mock_fallback)
 
@@ -307,16 +278,6 @@ JSON:
 }}
 """
     
-    response = await client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "Experto en roleplay educativo. Salida en JSON estricto."},
-            {"role": "user", "content": prompt}
-        ],
-        response_format={"type": "json_object"}
-    )
-    
-    return json.loads(response.choices[0].message.content)
     mensajes = [
         {"role": "system", "content": "Experto en roleplay educativo. Salida en JSON estricto."},
         {"role": "user", "content": prompt}
@@ -357,12 +318,6 @@ JSON:
         
     mensajes_api.append({"role": "user", "content": mensaje})
     
-    response = await client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=mensajes_api,
-        response_format={"type": "json_object"}
-    )
-    return json.loads(response.choices[0].message.content)
     mock_fallback = {"respuesta_chat": "Très bien! Continue...", "correcciones": []}
     return await _ejecutar_con_reintentos(mensajes_api, mock_fallback)
 
@@ -384,25 +339,11 @@ REGLAS GENERALES:
 - Devuelve ÚNICAMENTE el texto en francés, sin JSON, sin introducciones, sin explicaciones.
     """
     
-    response = await client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3
-    )
-    return response.choices[0].message.content.strip()
     mensajes = [{"role": "user", "content": prompt}]
     mock_fallback = "Bonjour, ceci est un test audio car la clé API OpenAI n'est pas configurée. Écoutez bien."
     return await _ejecutar_con_reintentos(mensajes, mock_fallback, response_format=None, temperature=0.3)
 
 async def generar_audio_tts(texto: str) -> str:
-    response = await client.audio.speech.create(
-        model="tts-1",
-        voice="alloy",
-        input=texto,
-        response_format="mp3"
-    )
-    audio_b64 = base64.b64encode(response.content).decode('utf-8')
-    return audio_b64
     if not settings.OPENAI_API_KEY or settings.OPENAI_API_KEY == "tu_clave_secreta_aqui":
         logger.warning("⚠️ No hay API Key para TTS. Devolviendo audio vacío de prueba.")
         return "" # Retornamos vacío si no hay key
@@ -439,12 +380,6 @@ REGLAS JSON:
 JSON:
 {{"score": 0, "feedback": "..."}}
 """
-    response = await client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        response_format={"type": "json_object"}
-    )
-    return json.loads(response.choices[0].message.content)
     mensajes = [{"role": "user", "content": prompt}]
     mock_fallback = {"score": 85, "feedback": "¡Muy bien! (Evaluación de prueba)"}
     return await _ejecutar_con_reintentos(mensajes, mock_fallback)
@@ -471,12 +406,6 @@ JSON:
     ]
     mensajes_api.extend(historial)
     
-    response = await client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=mensajes_api,
-        response_format={"type": "json_object"}
-    )
-    return json.loads(response.choices[0].message.content)
     mock_fallback = {"score": 90, "feedback": "Buen trabajo practicando. (Modo prueba)"}
     return await _ejecutar_con_reintentos(mensajes_api, mock_fallback)
 
@@ -506,29 +435,12 @@ JSON:
 }}
 """
 
-        response = await client.chat.completions.create(
-            model="gpt-4o-mini", 
-            messages=[
-                {"role": "system", "content": "Eres un experto lingüista que solo responde en formato JSON."},
-                {"role": "user", "content": prompt}
-            ],
-            response_format={ "type": "json_object" }
-        )
         mensajes = [
             {"role": "system", "content": "Eres un experto lingüista que solo responde en formato JSON."},
             {"role": "user", "content": prompt}
         ]
         mock_fallback = {"categoria": "GRAMATICA", "feedback": "Revisa la conjugación."}
         return await _ejecutar_con_reintentos(mensajes, mock_fallback)
-
-        contenido = response.choices[0].message.content
-        resultado = json.loads(contenido)
-
-        return {
-            "categoria": resultado.get("categoria", "GRAMATICA"),
-            "feedback": resultado.get("feedback", "Revisa la ortografía o estructura de la respuesta.")
-        }
-
     except Exception as e:
         logger.error(f"Error en analizar_error_gramatical: {e}")
         return {

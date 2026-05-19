@@ -28,7 +28,11 @@ def startup_event():
 # 5. Configuración de CORS (Leyendo dinámicamente desde tu .env)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS, # <-- ¡Esta es la clave del éxito!
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://192.168.1.83:3000" # TU IP LOCAL AQUI
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
