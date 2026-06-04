@@ -72,7 +72,7 @@ Cuenta las palabras antes de generar la respuesta. Si el texto tiene menos o má
 
 REGLAS DEL QUIZ:
 - Crea EXACTAMENTE 5 preguntas de comprensión lectora de opción múltiple en francés basadas en el texto.
-- Cada pregunta debe tener 3 opciones de respuesta (solo una correcta).
+- Cada pregunta debe tener 4 opciones de respuesta (solo una correcta).
 - Las opciones incorrectas (distractores) deben ser plausibles pero claramente descartables si se leyó con atención. Evita opciones absurdas u obvias.
 
 REGLAS JSON:
@@ -86,6 +86,7 @@ JSON:
       "pregunta": "...",
       "opciones": [
         {{"texto": "...", "es_correcta": true}},
+        {{"texto": "...", "es_correcta": false}},
         {{"texto": "...", "es_correcta": false}},
         {{"texto": "...", "es_correcta": false}}
       ]
@@ -107,6 +108,7 @@ JSON:
                 "opciones": [
                     {"texto": "Dans le parc", "es_correcta": True},
                     {"texto": "Dans la maison", "es_correcta": False},
+                {"texto": "Au supermarché", "es_correcta": False},
                     {"texto": "À l'école", "es_correcta": False}
                 ]
             }
@@ -171,7 +173,7 @@ REGLAS DEL TEXTO Y LOS HUECOS:
 - Reemplaza esas {num_huecos} palabras en el texto EXCLUSIVAMENTE con estos marcadores: {lista_marcadores}.
 
 REGLAS DE LAS OPCIONES:
-- Para cada marcador, genera 3 opciones. Solo 1 debe ser correcta.
+- Para cada marcador, genera 4 opciones. Solo 1 debe ser correcta.
 - Las opciones incorrectas deben ser errores comunes para estudiantes de nivel {nivel}.
 - Las opciones incorrectas deben ser errores comunes para estudiantes de nivel {nivel} (falsos amigos, mala conjugación, errores de género o número).
 - Asegúrate de que gramatical y lógicamente solo exista una respuesta válida posible para el contexto del hueco.
@@ -186,6 +188,7 @@ JSON ESTRICTO:
       "explicacion": "...",
       "opciones": [
         {{"texto": "...", "es_correcta": true}},
+        {{"texto": "...", "es_correcta": false}},
         {{"texto": "...", "es_correcta": false}},
         {{"texto": "...", "es_correcta": false}}
       ]
@@ -208,6 +211,7 @@ JSON ESTRICTO:
                 "opciones": [
                     {"texto": "suis", "es_correcta": True},
                     {"texto": "est", "es_correcta": False},
+                {"texto": "es", "es_correcta": False},
                     {"texto": "sommes", "es_correcta": False}
                 ]
             },
@@ -217,7 +221,8 @@ JSON ESTRICTO:
                 "opciones": [
                     {"texto": "allons", "es_correcta": True},
                     {"texto": "allez", "es_correcta": False},
-                    {"texto": "vont", "es_correcta": False}
+                {"texto": "vont", "es_correcta": False},
+                {"texto": "allions", "es_correcta": False}
                 ]
             }
         ]

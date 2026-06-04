@@ -81,8 +81,15 @@ export default function ReadingQuizPage() {
       if (!res.ok) throw new Error("Error al generar el texto de lectura.");
       
       const data: ReadingGenerateResponse = await res.json();
+      
+      const dataDesordenada = { ...data };
+      dataDesordenada.preguntas = dataDesordenada.preguntas.map(preg => {
+        const opcionesMezcladas = [...preg.opciones].sort(() => Math.random() - 0.5);
+        return { ...preg, opciones: opcionesMezcladas };
+      });
+
       setConfig(formData);
-      setLectura(data);
+      setLectura(dataDesordenada);
       setRespuestasUsuario({});
       setGradeResult(null);
     } catch (err: any) {
@@ -208,46 +215,55 @@ export default function ReadingQuizPage() {
             <div className="space-y-6">
               <h3 className="text-2xl font-black text-primary border-b border-border pb-2">Questions</h3>
               
-              {lectura.preguntas.map((item, pIdx) => (
-                <div key={pIdx} className="bg-surface border border-border rounded-2xl p-6 shadow-sm">
-                  <p className="text-lg font-bold mb-4">{pIdx + 1}. {item.pregunta}</p>
-                  <div className="flex flex-col gap-3">
-                    {item.opciones.map((opcion, oIdx) => {
-                      const isSelected = respuestasUsuario[pIdx] === oIdx;
-                      
-                      // Lógica de colores una vez que se ha calificado
-                      let bgColor = "bg-white hover:bg-gray-50 border-gray-200";
-                      let textColor = "text-gray-700";
-                      
-                      if (gradeResult) {
-                        if (opcion.es_correcta) {
-                          bgColor = "bg-green-100 border-green-400"; // La correcta siempre se pinta verde
-                          textColor = "text-green-900 font-bold";
-                        } else if (isSelected && !opcion.es_correcta) {
-                          bgColor = "bg-rose-100 border-rose-400"; // Si la eligió y estaba mal, se pinta roja
-                          textColor = "text-rose-900 font-bold";
-                        } else {
-                          bgColor = "bg-gray-50 border-gray-200 opacity-60"; // Las demás se opacan
-                        }
-                      } else if (isSelected) {
-                        bgColor = "bg-indigo-50 border-primary"; // Estado seleccionado antes de calificar
-                        textColor = "text-primary font-bold";
-                      }
+              {lectura.preguntas.map((item, pIdx) => {
+                const letras = ['A', 'B', 'C', 'D'];
+                return (
+                  <div key={pIdx} className="bg-white border border-border rounded-3xl p-6 shadow-sm">
+                    <p className="text-lg font-bold text-primary mb-4">
+                      <span className="bg-primary text-white rounded-full w-7 h-7 inline-flex items-center justify-center mr-2 text-sm">{pIdx + 1}</span>
+                      {item.pregunta}
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {item.opciones.map((opcion, oIdx) => {
+                        const isSelected = respuestasUsuario[pIdx] === oIdx;
+                        const isCorrect = opcion.es_correcta;
+                        
+                        let buttonClasses = "w-full text-left p-4 rounded-xl border-2 transition-all flex items-center gap-4 text-base";
 
-                      return (
-                        <button
-                          key={oIdx}
-                          onClick={() => handleOptionSelect(pIdx, oIdx)}
-                          disabled={gradeResult !== null}
-                          className={`w-full text-left px-5 py-4 rounded-xl border-2 transition-all ${bgColor} ${textColor}`}
-                        >
-                          {opcion.texto}
-                        </button>
-                      );
-                    })}
+                        if (gradeResult) { // After grading
+                          if (isCorrect) {
+                            buttonClasses += " bg-green-100 border-green-500 text-green-800 font-bold";
+                          } else if (isSelected && !isCorrect) {
+                            buttonClasses += " bg-rose-100 border-rose-500 text-rose-800 font-bold line-through";
+                          } else {
+                            buttonClasses += " bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed opacity-60";
+                          }
+                        } else { // Before grading
+                          if (isSelected) {
+                            buttonClasses += " bg-primary border-primary-dark text-white font-bold shadow-lg ring-2 ring-offset-2 ring-primary";
+                          } else {
+                            buttonClasses += " bg-white hover:bg-indigo-50 hover:border-primary-light border-gray-300 text-gray-800";
+                          }
+                        }
+
+                        return (
+                          <button
+                            key={oIdx}
+                            onClick={() => handleOptionSelect(pIdx, oIdx)}
+                            disabled={gradeResult !== null}
+                            className={buttonClasses}
+                          >
+                            <span className={`flex-shrink-0 w-7 h-7 rounded-full font-bold text-sm inline-flex items-center justify-center ${isSelected && !gradeResult ? 'bg-white text-primary' : 'bg-gray-200 text-gray-600'}`}>
+                              {letras[oIdx]}
+                            </span>
+                            <span>{opcion.texto}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               {/* BOTÓN DE CALIFICAR O RESULTADOS */}
               {!gradeResult ? (

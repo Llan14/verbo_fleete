@@ -157,58 +157,25 @@ export default function GrammarPage() {
     setGradeResult(null);
   };
 
-  const renderTextoInteractivo = () => {
+  const renderTextoConHuecos = () => {
     if (!ejercicio) return null;
 
     const partes = ejercicio.texto_con_huecos.split(/(\[BLANK_\d+\])/g);
 
     return (
-      <div className="text-xl leading-loose text-gray-800 whitespace-pre-wrap font-medium">
+      <p className="text-xl leading-loose text-gray-800 whitespace-pre-wrap font-medium">
         {partes.map((parte, index) => {
-          const hueco = ejercicio.huecos.find(h => h.id_hueco === parte);
-          
-          if (hueco) {
-            const hasAnswered = respuestasUsuario[hueco.id_hueco] !== undefined;
-            const selectedIdx = respuestasUsuario[hueco.id_hueco] ?? "";
-            
-            let bgColor = "bg-gray-100 border-gray-300";
-            let textColor = "text-gray-800";
-            
-            if (gradeResult) {
-              const idxCorrecta = hueco.opciones.findIndex(o => o.es_correcta === true);
-              if (selectedIdx === idxCorrecta && idxCorrecta !== -1) {
-                bgColor = "bg-green-100 border-green-500";
-                textColor = "text-green-800 font-bold";
-              } else {
-                bgColor = "bg-rose-100 border-rose-500";
-                textColor = "text-rose-800 font-bold";
-              }
-            } else if (hasAnswered) {
-              bgColor = "bg-indigo-50 border-primary";
-              textColor = "text-primary font-bold";
-            }
-
+          if (/\[BLANK_\d+\]/.test(parte)) {
+            const huecoIndex = parseInt(parte.match(/\d+/)?.[0] || '0');
             return (
-              <select
-                key={index}
-                value={selectedIdx}
-                onChange={(e) => handleSelectChange(hueco.id_hueco, parseInt(e.target.value))}
-                disabled={gradeResult !== null}
-                className={`mx-2 px-3 py-1 rounded-lg border-b-2 outline-none appearance-none cursor-pointer transition-colors shadow-sm text-center ${bgColor} ${textColor}`}
-              >
-                <option value="" disabled>___</option>
-                {hueco.opciones.map((opcion, oIdx) => (
-                  <option key={oIdx} value={oIdx}>
-                    {opcion.texto}
-                  </option>
-                ))}
-              </select>
+              <span key={index} className="font-bold text-primary bg-primary/10 px-2 py-1 rounded-md whitespace-nowrap">
+                [Hueco {huecoIndex}]
+              </span>
             );
           }
-          
           return <span key={index}>{parte}</span>;
         })}
-      </div>
+      </p>
     );
   };
 
@@ -259,12 +226,71 @@ export default function GrammarPage() {
       <main className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">
         <div className="max-w-5xl mx-auto space-y-8">
           
-          <div className="bg-white border border-border rounded-3xl p-6 md:p-10 shadow-sm">
+          <div className="bg-white border border-border rounded-3xl p-6 md:p-8 shadow-sm">
             <h2 className="text-xs font-black uppercase text-text-muted tracking-widest mb-6">Complète l'histoire</h2>
-            {renderTextoInteractivo()}
+            {renderTextoConHuecos()}
           </div>
 
-          {!gradeResult ? (
+          {/* Contenedor de las preguntas de opción múltiple */}
+          <div className="space-y-6">
+            {ejercicio?.huecos.map((hueco, idx) => {
+              const letras = ['A', 'B', 'C', 'D'];
+              return (
+                <div key={hueco.id_hueco} className="bg-white border border-border rounded-3xl p-6 shadow-sm">
+                  <p className="text-sm font-bold text-primary mb-4">
+                    <span className="bg-primary text-white rounded-full w-6 h-6 inline-flex items-center justify-center mr-2">{idx + 1}</span>
+                    Completa el hueco
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {hueco.opciones.map((opcion, oIdx) => {
+                      const isSelected = respuestasUsuario[hueco.id_hueco] === oIdx;
+                      const isCorrect = opcion.es_correcta;
+
+                      let buttonClasses = "w-full text-left p-4 rounded-xl border-2 transition-all flex items-center gap-4 text-base";
+
+                      if (gradeResult) { // After grading
+                        if (isCorrect) {
+                          buttonClasses += " bg-green-100 border-green-500 text-green-800 font-bold";
+                        } else if (isSelected && !isCorrect) {
+                          buttonClasses += " bg-rose-100 border-rose-500 text-rose-800 font-bold line-through";
+                        } else {
+                          buttonClasses += " bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed opacity-60";
+                        }
+                      } else { // Before grading
+                        if (isSelected) {
+                          buttonClasses += " bg-primary border-primary-dark text-white font-bold shadow-lg ring-2 ring-offset-2 ring-primary";
+                        } else {
+                          buttonClasses += " bg-white hover:bg-indigo-50 hover:border-primary-light border-gray-300 text-gray-800";
+                        }
+                      }
+
+                      return (
+                        <button
+                          key={oIdx}
+                          onClick={() => handleSelectChange(hueco.id_hueco, oIdx)}
+                          disabled={gradeResult !== null}
+                          className={buttonClasses}
+                        >
+                          <span className={`flex-shrink-0 w-7 h-7 rounded-full font-bold text-sm inline-flex items-center justify-center ${isSelected && !gradeResult ? 'bg-white text-primary' : 'bg-gray-200 text-gray-600'}`}>
+                            {letras[oIdx]}
+                          </span>
+                          <span>{opcion.texto}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {gradeResult && (
+                    <div className="mt-5 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800 animate-in fade-in">
+                      <p><span className="font-bold">💡 Explicación:</span> {hueco.explicacion}</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Botón de Evaluar o Resultados */}
+          { !gradeResult ? (
             <div className="flex flex-col items-end pt-4">
               <button
                 onClick={handleGrade}
@@ -285,39 +311,6 @@ export default function GrammarPage() {
                 <h2 className={`text-3xl font-black mb-2 ${gradeResult.score >= 80 ? 'text-green-800' : 'text-amber-800'}`}>
                   Calificación: {gradeResult.score.toFixed(0)}%
                 </h2>
-                <p className="text-lg font-medium opacity-80">
-                  Acertaste {gradeResult.aciertos} de {gradeResult.total} huecos.
-                </p>
-              </div>
-
-              {/* FEEDBACK DETALLADO BLINDADO CONTRA ERRORES */}
-              <div className="bg-white border border-border rounded-3xl p-6 md:p-8 shadow-sm">
-                <h3 className="text-xl font-black text-primary mb-6 border-b pb-2">Correcciones y Explicaciones</h3>
-                <div className="space-y-4">
-                  {ejercicio?.huecos.map((hueco, idx) => {
-                    // Usamos .find para buscar la correcta por si el índice falla
-                    const opcionCorrecta = hueco.opciones.find(o => o.es_correcta === true);
-                    const selectedIdx = respuestasUsuario[hueco.id_hueco];
-                    const isCorrect = selectedIdx !== undefined && hueco.opciones[selectedIdx]?.es_correcta === true;
-                    
-                    return (
-                      <div key={idx} className={`p-4 rounded-xl border ${isCorrect ? 'bg-green-50/50 border-green-100' : 'bg-rose-50 border-rose-200'}`}>
-                        <p className="font-bold text-gray-800 mb-1">
-                          Hueco {idx + 1}: <span className={isCorrect ? "text-green-700" : "text-rose-700 line-through mr-2"}>
-                            {/* Verificación súper segura por si el array se corrompe */}
-                            {selectedIdx !== undefined && hueco.opciones[selectedIdx]?.texto 
-                              ? hueco.opciones[selectedIdx].texto 
-                              : "No respondido"}
-                          </span>
-                          {!isCorrect && opcionCorrecta?.texto && (
-                            <span className="text-green-700">✓ {opcionCorrecta.texto}</span>
-                          )}
-                        </p>
-                        <p className="text-sm text-gray-600 italic">💡 {hueco.explicacion || "Revisa la gramática."}</p>
-                      </div>
-                    );
-                  })}
-                </div>
               </div>
               
               <div className="flex justify-center pt-4">

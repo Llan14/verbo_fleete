@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import ContextForm from "@/components/ContextForm";
 import Link from "next/link";
 
@@ -22,6 +22,8 @@ export default function ListeningPage() {
   const [textoOriginal, setTextoOriginal] = useState<string>("");
   const [respuestaUsuario, setRespuestaUsuario] = useState<string>("");
   const [gradeResult, setGradeResult] = useState<ListeningGradeResponse | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [speed, setSpeed] = useState<number>(1);
   
   // Estados de UI
   const [isLoaded, setIsLoaded] = useState(false);
@@ -134,6 +136,13 @@ export default function ListeningPage() {
     setGradeResult(null);
   };
 
+  const handleSpeedChange = (newSpeed: number) => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = newSpeed;
+      setSpeed(newSpeed);
+    }
+  };
+
   if (!isLoaded) return <div className="w-full h-dvh bg-background"></div>;
 
   if (!config) {
@@ -184,10 +193,32 @@ export default function ListeningPage() {
           <div className="bg-white border border-border rounded-3xl p-8 shadow-sm text-center flex flex-col items-center">
             <h2 className="text-xl font-black text-primary mb-6">Écoute attentivement 👂</h2>
             {audioSrc ? (
-              <audio controls className="w-full max-w-md custom-audio-player">
-                <source src={audioSrc} type="audio/mp3" />
-                Tu navegador no soporta el elemento de audio.
-              </audio>
+          <div className="flex flex-col items-center w-full max-w-md">
+            <audio ref={audioRef} controls className="w-full custom-audio-player mb-5">
+              <source src={audioSrc} type="audio/mp3" />
+              Tu navegador no soporta el elemento de audio.
+            </audio>
+            
+            {/* Controles de velocidad */}
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-bold text-text-muted">Velocidad:</span>
+              <div className="flex bg-background border border-border rounded-xl overflow-hidden shadow-sm">
+                {[0.5, 0.75, 1, 1.25].map((rate) => (
+                  <button
+                    key={rate}
+                    onClick={() => handleSpeedChange(rate)}
+                    className={`px-4 py-1.5 text-sm font-bold transition-colors ${
+                      speed === rate 
+                        ? "bg-menu-active text-white" 
+                        : "hover:bg-gray-100 text-text-muted"
+                    }`}
+                  >
+                    {rate}x
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
             ) : (
               <p className="text-text-muted">Cargando audio...</p>
             )}
