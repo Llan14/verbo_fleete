@@ -115,10 +115,10 @@ export default function DashboardPage() {
         
         <div className="lg:col-span-2 space-y-6">
           
-          {weakestTense && weakestTense.score < 85 && (
+          {weakestTense && weakestTense.score < 85 && report?.recommendations && report.recommendations.length > 0 && (
             <div className="bg-linear-to-r from-amber-50 to-orange-50 border border-amber-200 p-4 rounded-3xl flex flex-col md:flex-row items-center gap-6 shadow-sm">
               <div className="text-4xl bg-surface w-16 h-16 rounded-2xl flex shrink-0 items-center justify-center shadow-inner">
-                🎯
+                💡
               </div>
               <div className="flex-1 text-center md:text-left">
                 <h4 className="text-amber-900 font-bold text-lg">
@@ -129,13 +129,11 @@ export default function DashboardPage() {
                   <span className="font-black underline decoration-amber-400 underline-offset-4">
                     {weakestTense.name}
                   </span>{" "}
-                  es de solo {weakestTense.score}%. 
-                  
-                  {report?.recommendations && report.recommendations.length > 0 && (
+                  es de solo {weakestTense.score}%.
                     <span className="block mt-2 font-medium text-amber-900/80 italic">
                       💡 Tip de la IA: {report.recommendations[0]}
                     </span>
-                  )}
+                  )
                 </p>
               </div>
             </div>
@@ -143,7 +141,7 @@ export default function DashboardPage() {
 
           <div className="bg-surface p-8 rounded-3xl shadow-sm border border-border">
             <h3 className="text-xl font-bold text-primary mb-8 flex items-center gap-2">
-              Dominio por Tiempo Verbal
+              Puntuación y Dominio por Tiempo Verbal
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -175,6 +173,29 @@ export default function DashboardPage() {
         </div>
 
         <div className="space-y-6">
+          {report?.weaknesses && report.weaknesses.length > 0 && (
+            <div className="bg-surface p-6 rounded-3xl shadow-sm border border-border h-fit">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-primary">
+                  🚨 Áreas de Mejora
+                </h3>
+                <span className="text-[10px] font-black text-rose-700 bg-rose-100 px-2 py-1 rounded-full uppercase">
+                  IA Report
+                </span>
+              </div>
+              <p className="text-xs text-text-muted mb-6 leading-relaxed">
+                La IA ha identificado estas categorías como tus puntos más débiles. ¡Enfócate en ellas!
+              </p>
+              {report.weaknesses.map((weakness, index) => (
+                <ErrorItem
+                  key={index}
+                  text={weakness.category}
+                  severity={getSeverity(weakness.mastery_level)}
+                  count={weakness.error_count}
+                />
+              ))}
+            </div>
+          )}
           <div className="bg-surface p-6 rounded-3xl shadow-sm border border-border h-fit">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-primary">
