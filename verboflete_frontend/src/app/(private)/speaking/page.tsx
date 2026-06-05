@@ -295,17 +295,17 @@ export default function SpeakingPage() {
         ) : (
           <div className="animate-in fade-in slide-in-from-bottom-4">
             <div
-              className={`p-6 rounded-2xl border-2 ${
-                resultado.es_correcto
-                  ? "bg-green-50 border-green-200 text-green-800"
-                  : "bg-amber-50 border-amber-200 text-amber-900"
-              }`}
+              className={`p-6 rounded-2xl border-2 ${resultado.es_correcto ? "bg-green-50 border-green-200 text-green-800" : "bg-amber-50 border-amber-200 text-amber-900"}`}
             >
               <div className="text-4xl mb-2">
                 {resultado.es_correcto ? "🏆" : "🧐"}
               </div>
               <h3 className="text-xl font-black mb-1">
                 {resultado.es_correcto ? "¡Perfecto!" : "Casi lo logras"}
+                {/* Si es correcto simple pero no fonéticamente, se puede dar un mensaje intermedio */}
+                {resultado.es_correcto_simple && !resultado.es_correcto_foneticamente && (
+                  <span className="text-base font-medium text-amber-700 block"> (La palabra es correcta, pero revisa la pronunciación)</span>
+                )}
               </h3>
               <p className="text-sm opacity-80 mb-4">{resultado.mensaje}</p>
 

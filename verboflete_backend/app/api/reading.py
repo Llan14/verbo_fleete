@@ -65,8 +65,12 @@ async def evaluate_reading(
             if opcion_elegida == idx_correcta:
                 aciertos += 1
             else:
-                # Si falló, guardamos el reporte del error
-                errores_reporte.append(f"Pregunta: {pregunta_real['pregunta']} | Elegiste: {pregunta_real['opciones'][opcion_elegida]['texto']} | Era: {pregunta_real['opciones'][idx_correcta]['texto']}")
+                # Si falló, guardamos el reporte del error incluyendo la explicación si existe
+                explicacion_error = pregunta_real['opciones'][opcion_elegida].get('explicacion', 'Sin explicación.')
+                errores_reporte.append(
+                    f"Pregunta: {pregunta_real['pregunta']} | Elegiste: {pregunta_real['opciones'][opcion_elegida]['texto']} "
+                    f"| Era: {pregunta_real['opciones'][idx_correcta]['texto']} | Feedback: {explicacion_error}"
+                )
 
         # Calculamos score base 100
         score_final = (aciertos / len(preguntas)) * 100

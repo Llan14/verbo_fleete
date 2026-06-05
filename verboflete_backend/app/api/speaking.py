@@ -10,9 +10,9 @@ from app.core.database import get_db
 from app.core.grammar import get_correct_form
 from app.core.security import get_usuario_actual
 from app.models import Usuario
-from app.models.session import Sesion
-from app.models.response_detail import DetalleRespuesta
-from app.services.ia_service import generar_verbo_hablar_ia
+from app.models.session import Sesion # Importar Sesion
+from app.models.response_detail import DetalleRespuesta 
+from app.services.ia_service import generar_verbo_hablar_ia, evaluar_pronunciacion_ia
 from app.schemas.speaking import ConfiguracionSpeaking, EjercicioSpeakingResponse
 from app.core.config import settings
 
@@ -130,15 +130,27 @@ async def validar_audio(
             try:
                 os.remove(nombre_archivo)
             except:
-                pass 
+                pass
 
     texto_limpio = limpiar_texto(texto_transcrito)
     respuesta_esperada_limpia = limpiar_texto(respuesta_esperada)
     
+    # 1. Evaluación inicial de corrección (simple string comparison)
+    es_correcto_simple = f" {respuesta_esperada_limpia} " in f" {texto_limpio} "
+    
+    # 2. Feedback fonético detallado de la IA
+    feedback_fonetico_ia = await evaluar_pronunciacion_ia(
+        texto_transcrito=texto_transcrito,
+        respuesta_esperada=respuesta_esperada,
+        verbo_infinitivo=verbo_infinitivo,
+        tense=tense
+    )
 
-    # Solución de error lógico: Usamos espacios para buscar la frase exacta sin dividirla
-    es_correcto = f" {respuesta_esperada_limpia} " in f" {texto_limpio} "
-    puntaje = 100.0 if es_correcto else 0.0
+    es_correcto_foneticamente = feedback_fonetico_ia.get("es_correcto_foneticamente", False)
+    feedback_detallado = feedback_fonetico_ia.get("feedback_fonetico", "No se pudo obtener feedback detallado.")
+
+    es_correcto = es_correcto_simple and es_correcto_foneticamente
+    puntaje = 100.0 if es_correcto_simple and es_correcto_foneticamente else 0.0
 
 
     nueva_sesion = Sesion(
@@ -157,19 +169,20 @@ async def validar_audio(
         verbo_infinitivo=verbo_infinitivo,      
         respuesta_correcta=respuesta_esperada,
         respuesta_usuario=texto_transcrito, 
-        puntaje=puntaje,
-        categoria_error="Pronunciación" if not es_correcto else None,
-        feedback_ia=f"Esperaba: {respuesta_esperada}. Escuché: {texto_transcrito}." if not es_correcto else "¡Perfecto!"
-
+        puntaje=puntaje, # El puntaje ahora considera el feedback fonético
+        categoria_error="Pronunciación" if not es_correcto_simple or not es_correcto_foneticamente else None,
+        feedback_ia=feedback_detallado # Usamos el feedback detallado de la IA
     )
     db.add(detalle)
     db.commit()
 
 
     return {
+        "es_correcto_simple": es_correcto_simple, # Para saber si al menos dijo la palabra
+        "es_correcto_foneticamente": es_correcto_foneticamente, # Para saber si la pronunciación fue buena
         "transcripcion": texto_transcrito,
-        "es_correcto": es_correcto,
+        "es_correcto": es_correcto, # Resultado final combinado
         "respuesta_esperada": respuesta_esperada,
         "puntaje": puntaje,
-        "mensaje": "¡Excelente pronunciación!" if es_correcto else f"Casi. Entendí: '{texto_transcrito}'. Esperaba que dijeras algo con: '{respuesta_esperada}'."
+        "mensaje": feedback_detallado # El mensaje principal ahora es el feedback detallado
     }

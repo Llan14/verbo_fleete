@@ -6,6 +6,7 @@ import ContextForm, { ContextData } from "@/components/ContextForm";
 interface OpcionQuiz {
   texto: string;
   es_correcta: boolean;
+  explicacion?: string; // Añadido para feedback dinámico
 }
 
 interface PreguntaQuiz {
@@ -238,6 +239,10 @@ export default function ReadingQuizPage() {
                           } else {
                             buttonClasses += " bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed opacity-60";
                           }
+
+                          if (isSelected && opcion.explicacion) {
+                            buttonClasses += " ring-2 ring-offset-2 ring-rose-500"; // Resaltar la opción elegida si hay explicación
+                          }
                         } else { // Before grading
                           if (isSelected) {
                             buttonClasses += " bg-primary border-primary-dark text-white font-bold shadow-lg ring-2 ring-offset-2 ring-primary";
@@ -257,6 +262,11 @@ export default function ReadingQuizPage() {
                               {letras[oIdx]}
                             </span>
                             <span>{opcion.texto}</span>
+                            {gradeResult && opcion.explicacion && (
+                              <p className="text-xs text-gray-600 mt-1 italic">
+                                {opcion.explicacion}
+                              </p>
+                            )}
                           </button>
                         );
                       })}

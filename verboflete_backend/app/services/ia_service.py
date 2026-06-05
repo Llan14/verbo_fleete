@@ -389,6 +389,40 @@ JSON:
     mock_fallback = {"score": 85, "feedback": "¡Muy bien! (Evaluación de prueba)"}
     return await _ejecutar_con_reintentos(mensajes, mock_fallback)
 
+async def evaluar_pronunciacion_ia(texto_transcrito: str, respuesta_esperada: str, verbo_infinitivo: str, tense: str) -> dict:
+    prompt = f"""
+Eres un profesor de francés experto en fonética y pronunciación.
+El estudiante intentó conjugar el verbo "{verbo_infinitivo}" en tiempo "{tense}".
+La respuesta esperada era: "{respuesta_esperada}"
+Lo que el sistema de reconocimiento de voz transcribió fue: "{texto_transcrito}"
+
+Tu tarea es analizar la transcripción del usuario en comparación con la respuesta esperada y proporcionar un feedback detallado sobre la pronunciación.
+
+REGLAS JSON:
+- Devuelve ÚNICAMENTE el JSON, sin explicaciones, sin markdown, sin texto extra.
+- 'es_correcto_foneticamente': booleano, true si la pronunciación es casi perfecta, false si hay errores notables.
+- 'feedback_fonetico': Un feedback pedagógico en español (máximo 50 palabras) que:
+    * Identifique los errores de pronunciación específicos (ej: "la 'r' no fue vibrante", "la 'e' final fue muda", "confundiste el sonido 'ou' con 'u'").
+    * Explique brevemente por qué es un error común o cómo se produce el sonido correcto.
+    * Ofrezca un consejo práctico para mejorar ese sonido o aspecto específico.
+    * Si la pronunciación es correcta, felicita y destaca un aspecto positivo.
+
+JSON:
+{{
+  "es_correcto_foneticamente": true,
+  "feedback_fonetico": "..."
+}}
+"""
+    mensajes = [{"role": "system", "content": "Experto en fonética francesa. Salida en JSON estricto."},
+                {"role": "user", "content": prompt}]
+
+    mock_fallback = {
+        "es_correcto_foneticamente": False,
+        "feedback_fonetico": "Tu pronunciación de 'r' fue un poco suave. Intenta vibrar más la punta de la lengua contra el paladar. ¡Sigue practicando!"
+    }
+
+    return await _ejecutar_con_reintentos(mensajes, mock_fallback)
+
 async def evaluar_chat_ia(config: dict, historial: list):
     
     mensajes_api = [
