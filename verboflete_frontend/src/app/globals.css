@@ -30,3 +30,12 @@ body {
   background-color: var(--color-background);
   color: var(--color-text-main);
 }
+
+/* Estilos para el reproductor de audio personalizado */
+.custom-audio-player {
+  background-color: var(--color-background); /* Fondo similar al de los botones de control de velocidad */
+  border: 1px solid var(--color-border);     /* Borde similar al de los botones de control de velocidad */
+  border-radius: 0.75rem;                    /* Bordes redondeados (rounded-xl) */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* Sombra sutil (shadow-sm) */
+  padding: 0.5rem 1rem;                      /* Espaciado interno para que se vea más integrado */
+}

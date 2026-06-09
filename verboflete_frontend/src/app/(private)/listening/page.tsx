@@ -13,6 +13,7 @@ interface ListeningGradeResponse {
   score: number;
   feedback: string;
   texto_original: string;
+  sesion_id?: number;
 }
 
 export default function ListeningPage() {
@@ -24,6 +25,8 @@ export default function ListeningPage() {
   const [gradeResult, setGradeResult] = useState<ListeningGradeResponse | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [speed, setSpeed] = useState<number>(1);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [progress, setProgress] = useState<number>(0); // Progreso en porcentaje
   
   // Estados de UI
   const [isLoaded, setIsLoaded] = useState(false);
@@ -143,6 +146,30 @@ export default function ListeningPage() {
     }
   };
 
+  const togglePlayPause = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      const newProgress = (audioRef.current.currentTime / audioRef.current.duration) * 100;
+      setProgress(newProgress || 0);
+    }
+  };
+
+  const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = (audioRef.current.duration / 100) * parseInt(e.target.value);
+    }
+  };
+
   if (!isLoaded) return <div className="w-full h-dvh bg-background"></div>;
 
   if (!config) {
@@ -193,11 +220,36 @@ export default function ListeningPage() {
           <div className="bg-white border border-border rounded-3xl p-8 shadow-sm text-center flex flex-col items-center">
             <h2 className="text-xl font-black text-primary mb-6">Écoute attentivement 👂</h2>
             {audioSrc ? (
-          <div className="flex flex-col items-center w-full max-w-md">
-            <audio ref={audioRef} controls className="w-full custom-audio-player mb-5">
+          <div className="flex flex-col items-center w-full max-w-md space-y-4">
+            <audio
+              ref={audioRef}
+              className="w-full custom-audio-player mb-5"
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
+              onEnded={() => setIsPlaying(false)}
+              onTimeUpdate={handleTimeUpdate}
+            >
               <source src={audioSrc} type="audio/mp3" />
               Tu navegador no soporta el elemento de audio.
             </audio>
+
+            {/* Controles personalizados */}
+            <div className="flex items-center gap-4 w-full">
+              <button
+                onClick={togglePlayPause}
+                className="px-4 py-2 text-sm font-bold transition-colors bg-primary hover:bg-blue-700 text-white rounded-xl shadow-md"
+              >
+                {isPlaying ? "⏸️ Pausar" : "▶️ Reproducir"}
+              </button>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={progress}
+                onChange={handleProgressChange}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+              />
+            </div>
             
             {/* Controles de velocidad */}
             <div className="flex items-center gap-3">
@@ -273,7 +325,17 @@ export default function ListeningPage() {
               <div className="flex justify-center pt-4">
                 <button onClick={handleReset} className="bg-menu-active hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-xl shadow-md transition-colors">
                   Generar otro dictado
+              <div className="flex justify-center gap-4 pt-4">
+                <button onClick={handleReset} className="bg-background border border-border hover:bg-gray-100 text-text-muted font-bold py-3 px-6 rounded-xl shadow-sm transition-colors">
+                  Otro dictado
                 </button>
+                {gradeResult.sesion_id && (
+                  <Link href={`/sessions/ejercicio?id=${gradeResult.sesion_id}`}>
+                    <button className="bg-menu-active hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-xl shadow-md transition-colors">
+                      Ver Reporte en Dashboard
+                    </button>
+                  </Link>
+                )}
               </div>
             </div>
           )}          
