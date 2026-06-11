@@ -4,6 +4,7 @@ import os
 from openai import AsyncOpenAI
 from openai import AsyncOpenAI, AuthenticationError, RateLimitError
 import json
+import uuid
 
 client =AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 
@@ -486,3 +487,60 @@ JSON:
             "categoria": "GRAMATICA",
             "feedback": "Hubo un error al analizar tu respuesta, pero revísala con cuidado."
         }
+
+async def generar_opciones_listening_ia(texto_audio: str, nivel: str) -> dict:
+    """
+    Toma el texto generado para el audio y le pide a la IA que genere 
+    una pregunta de comprensión de opción múltiple en formato JSON.
+    """
+    prompt = f"""
+    Eres un profesor de idiomas nivel {nivel}. 
+    Basado en el siguiente texto de un ejercicio de escucha: "{texto_audio}"
+    
+    Genera UNA pregunta de comprensión auditiva con 3 opciones múltiples.
+    
+    REGLAS CRÍTICAS:
+    1. La opción correcta debe ser ALEATORIA en cada ejercicio (A, B o C).
+    2. La "pregunta" y el texto de las "opciones" DEBEN ESTAR ESTRICTAMENTE EN EL MISMO IDIOMA QUE EL TEXTO DEL AUDIO. No las traduzcas.
+    3. La "explicacion" DEBE ESTAR EN ESPAÑOL para que el estudiante entienda por qué es la respuesta correcta.
+    
+    Debes devolver ÚNICAMENTE un objeto JSON válido con la siguiente estructura exacta (sin formato markdown, sin texto adicional):
+    {{
+        "pregunta": "¿Pregunta en el idioma del audio?",
+        "opciones": [
+            {{"id": "A", "texto": "Primera opción en el idioma del audio"}},
+            {{"id": "B", "texto": "Segunda opción en el idioma del audio"}},
+            {{"id": "C", "texto": "Tercera opción en el idioma del audio"}}
+        ],
+        "idOpcionCorrecta": "<LETRA DE LA OPCIÓN CORRECTA (A, B o C)>",
+        "explicacion": "Explicación en español de por qué esta es la correcta."
+    }}
+    """
+
+    mensajes = [
+        {"role": "system", "content": "Experto creador de evaluaciones. Salida en JSON estricto."},
+        {"role": "user", "content": prompt}
+    ]
+
+    mock_fallback = {
+        "pregunta": "¿De qué trata principalmente el texto?",
+        "opciones": [
+            {"id": "A", "texto": "Opción de prueba 1"},
+            {"id": "B", "texto": "Opción de prueba correcta"},
+            {"id": "C", "texto": "Opción de prueba 3"}
+        ],
+        "idOpcionCorrecta": "B",
+        "explicacion": "Respuesta generada en modo prueba por falta de API Key."
+    }
+
+    try:
+        resultado_json = await _ejecutar_con_reintentos(mensajes, mock_fallback)
+        
+        # Le añadimos un ID único al ejercicio generado
+        resultado_json["id"] = str(uuid.uuid4())
+        
+        return resultado_json
+
+    except Exception as e:
+        # En caso de que la IA falle o el JSON no se pueda parsear, retornamos un error seguro
+        raise Exception(f"Error al generar las opciones con la IA: {str(e)}")

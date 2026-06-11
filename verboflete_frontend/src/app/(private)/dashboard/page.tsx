@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link"; 
 
 interface TenseStat {
@@ -34,12 +34,12 @@ interface SesionResumen {
   puntaje_total: number;
 }
 
-export default function DashboardPage() {
+// === Custom Hook de Data Fetching ===
+function useDashboardData() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [historial, setHistorial] = useState<SesionResumen[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [mostrarTodos, setMostrarTodos] = useState(false);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -64,8 +64,12 @@ export default function DashboardPage() {
         
         setData(jsonDash);
         setHistorial(jsonHist);
-      } catch (err: any) {
-        setError(err.message || "No se pudo conectar con el servidor.");
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("No se pudo conectar con el servidor.");
+        }
       } finally {
         setLoading(false);
       }
@@ -73,6 +77,20 @@ export default function DashboardPage() {
 
     fetchDashboard();
   }, []);
+
+  return { data, historial, loading, error };
+}
+
+// === Componente Principal ===
+export default function DashboardPage() {
+  const { data, historial, loading, error } = useDashboardData();
+  const [mostrarTodos, setMostrarTodos] = useState(false);
+
+  // Memorizamos el cálculo de la porción del historial a mostrar para evitar
+  // renderizados innecesarios cuando otros estados cambian.
+  const displayedHistorial = useMemo(() => {
+    return mostrarTodos ? historial : historial.slice(0, 4);
+  }, [historial, mostrarTodos]);
 
   if (loading) {
     return (
@@ -116,7 +134,7 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 space-y-6">
           
           {weakestTense && weakestTense.score < 85 && report?.recommendations && report.recommendations.length > 0 && (
-            <div className="bg-linear-to-r from-amber-50 to-orange-50 border border-amber-200 p-4 rounded-3xl flex flex-col md:flex-row items-center gap-6 shadow-sm">
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-4 rounded-3xl flex flex-col md:flex-row items-center gap-6 shadow-sm">
               <div className="text-4xl bg-surface w-16 h-16 rounded-2xl flex shrink-0 items-center justify-center shadow-inner">
                 💡
               </div>
@@ -210,9 +228,9 @@ export default function DashboardPage() {
               Haz clic en tus sesiones recientes para ver la corrección y el análisis detallado de tu profesor IA.
             </p>
 
-<div className={`space-y-3 transition-all duration-300 ${mostrarTodos ? "max-h-70 overflow-y-auto pr-2 custom-scrollbar" : ""}`}>
+<div className={`space-y-3 transition-all duration-300 ${mostrarTodos ? "max-h-72 overflow-y-auto pr-2 custom-scrollbar" : ""}`}>
   {historial.length > 0 ? (
-    (mostrarTodos ? historial : historial.slice(0, 4)).map((sesion) => (
+    displayedHistorial.map((sesion) => (
       <Link 
         key={sesion.id} 
         href={`/sessions/ejercicio?id=${sesion.id}`}
@@ -255,6 +273,8 @@ export default function DashboardPage() {
   <div className="mt-4 pt-2 border-t border-border text-center">
     <button
       onClick={() => setMostrarTodos(!mostrarTodos)}
+      aria-expanded={mostrarTodos}
+      aria-controls="historial-list"
       className="text-xs font-bold text-menu-active hover:underline underline-offset-4 transition-colors"
     >
       {mostrarTodos ? "▲ Mostrar menos" : `▼ Ver todos (${historial.length})`}

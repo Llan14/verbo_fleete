@@ -166,10 +166,9 @@ export default function GrammarPage() {
       <p className="text-xl leading-loose text-gray-800 whitespace-pre-wrap font-medium">
         {partes.map((parte, index) => {
           if (/\[BLANK_\d+\]/.test(parte)) {
-            const huecoIndex = parseInt(parte.match(/\d+/)?.[0] || '0');
             return (
-              <span key={index} className="font-bold text-primary bg-primary/10 px-2 py-1 rounded-md whitespace-nowrap">
-                [Hueco {huecoIndex}]
+              <span key={index} className="inline-block min-w-[4rem] bg-primary/10 px-2 py-1 mx-1 rounded-md border-b-2 border-primary/20 align-baseline">
+                &nbsp;
               </span>
             );
           }
