@@ -277,6 +277,13 @@ export default function AdminUsuariosPage() {
             Cerrar Sesión
           </button>
           
+          <Link
+            href="/admin/grupos"
+            className="bg-primary hover:bg-primary-hover text-white font-bold py-2.5 px-6 rounded-xl transition-all shadow-md flex items-center gap-2 w-full md:w-auto justify-center"
+          >
+            Gestión de Grupos
+          </Link>
+
           <button 
             onClick={() => setIsModalOpen(true)}
             className="bg-primary hover:bg-primary-hover text-white font-bold py-2.5 px-6 rounded-xl transition-all shadow-md flex items-center gap-2 w-full md:w-auto justify-center"
@@ -414,7 +421,8 @@ export default function AdminUsuariosPage() {
               <div>
                 <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1">Rol del Sistema</label>
                 <select value={formData.rol} onChange={e => setFormData({...formData, rol: e.target.value})} className="w-full bg-background border border-border px-3 py-2 rounded-xl outline-none focus:border-menu-active font-medium">
-                  <option value="estudiante">Alumno</option>
+                  <option value="estudiante">Estudiante</option>
+                  <option value="tutor">Tutor / Maestro</option>
                   <option value="admin">Administrador</option>
                 </select>
               </div>
@@ -452,7 +460,8 @@ export default function AdminUsuariosPage() {
               <div>
                 <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1">Rol del Sistema</label>
                 <select value={editFormData.rol} onChange={e => setEditFormData({...editFormData, rol: e.target.value})} className="w-full bg-background border border-border px-3 py-2 rounded-xl outline-none focus:border-menu-active font-medium">
-                  <option value="estudiante">Alumno</option>
+                  <option value="estudiante">Estudiante</option>
+                  <option value="tutor">Tutor / Maestro</option>
                   <option value="admin">Administrador</option>
                 </select>
               </div>

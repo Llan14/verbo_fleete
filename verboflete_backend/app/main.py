@@ -14,7 +14,8 @@ from app.api import (
     writing, 
     listening, 
     grammar, 
-    reading
+    reading,
+    groups
 )
 
 # 3. Inicialización de la aplicación
@@ -48,6 +49,7 @@ routers = [
     listening.router,
     grammar.router,
     reading.router,
+    groups.router,
 ]
 
 # Inyectamos todas las rutas con el prefijo unificado "/api"
