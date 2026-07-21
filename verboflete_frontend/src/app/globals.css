@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @theme {
+<<<<<<< HEAD
   /* === Paleta de Colores Principal === */
   --color-primary: #1e40af; /* Azul oscuro de tus botones y títulos */
   --color-primary-hover: #1e3a8a; /* Azul más oscuro para hover */
@@ -25,6 +26,27 @@
 }
 
 /* Estilos base */
+=======
+  --color-primary: #1e40af;
+  --color-primary-hover: #1e3a8a;
+  --color-secondary: #0f2557;
+  --color-accent: #59d2ec;
+  --color-background: #f3f4f6;
+  --color-surface: #ffffff;
+  --color-text-main: #181d38;
+  --color-text-muted: #6b7280;
+  --color-border: #d1d5db;
+  --color-menu-bg: #181d38;
+  --color-menu-active: #59d2ec;
+  --color-menu-text: #fbfaf7;
+  --font-sans: Inter, "Inter Fallback", sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+>>>>>>> 2ca181e (creacion de gruopos)
 body {
   font-family: var(--font-sans);
   background-color: var(--color-background);

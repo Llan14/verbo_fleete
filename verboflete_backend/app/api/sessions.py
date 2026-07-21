@@ -64,7 +64,11 @@ def obtener_dashboard_stats(
 
     stats = [
         TenseStatSchema(
+<<<<<<< HEAD
             name=t.tense.capitalize(), 
+=======
+            name=t.tense.title(), 
+>>>>>>> 2ca181e (creacion de gruopos)
             score=round(t.promedio, 2), 
             total=t.total
         )
@@ -150,7 +154,11 @@ def obtener_dashboard_de_usuario_para_admin(
 
     stats = [
         TenseStatSchema(
+<<<<<<< HEAD
             name=t.tense.capitalize(), 
+=======
+            name=t.tense.title(), 
+>>>>>>> 2ca181e (creacion de gruopos)
             score=round(t.promedio, 2), 
             total=t.total
         )

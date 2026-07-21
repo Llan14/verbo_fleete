@@ -13,7 +13,11 @@ from app.models import Usuario
 from app.models.session import Sesion # Importar Sesion
 from app.models.response_detail import DetalleRespuesta 
 from app.services.ia_service import generar_verbo_hablar_ia, evaluar_pronunciacion_ia
+<<<<<<< HEAD
 from app.schemas.speaking import ConfiguracionSpeaking, EjercicioSpeakingResponse
+=======
+from app.schemas.speaking import ConfiguracionSpeaking, EjercicioSpeakingResponse, ValidarAudioRequest
+>>>>>>> 2ca181e (creacion de gruopos)
 from app.core.config import settings
 
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
@@ -85,10 +89,17 @@ def limpiar_texto(texto: str) -> str:
 @router.post("/validar")
 async def validar_audio(
     audio: UploadFile = File(...),
+<<<<<<< HEAD
     verbo_infinitivo: str = Form(...),
     respuesta_esperada: str = Form(...),
     tense: str = Form(...),
     db: Session = Depends(get_db),
+=======
+    db: Session = Depends(get_db),
+    verbo_infinitivo: str = Form(...), # Mantener para IA
+    respuesta_esperada: str = Form(...), # Mantener para IA
+    config: str = Form(...), # JSON string con mood y tense
+>>>>>>> 2ca181e (creacion de gruopos)
     usuario_actual: Usuario = Depends(get_usuario_actual)
 ):
 
@@ -100,6 +111,18 @@ async def validar_audio(
             detail="El audio está vacío o no se grabó correctamente. Intenta grabar de nuevo."
         )
 
+<<<<<<< HEAD
+=======
+    # Parsear la configuración recibida como string JSON
+    import json
+    try:
+        config_data = json.loads(config)
+        mood = config_data.get("mood", "indicatif")
+        tense = config_data.get("tense", "présent")
+    except (json.JSONDecodeError, AttributeError):
+        raise HTTPException(status_code=400, detail="La configuración del ejercicio (config) es inválida.")
+
+>>>>>>> 2ca181e (creacion de gruopos)
 
     with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as tmp:
         tmp.write(contenido_audio)
@@ -142,7 +165,11 @@ async def validar_audio(
     feedback_fonetico_ia = await evaluar_pronunciacion_ia(
         texto_transcrito=texto_transcrito,
         respuesta_esperada=respuesta_esperada,
+<<<<<<< HEAD
         verbo_infinitivo=verbo_infinitivo,
+=======
+        verbo_infinitivo=verbo_infinitivo, # verbo_infinitivo ya viene del Form
+>>>>>>> 2ca181e (creacion de gruopos)
         tense=tense
     )
 
@@ -156,7 +183,11 @@ async def validar_audio(
     nueva_sesion = Sesion(
         usuario_id=usuario_actual.id,
         modulo="hablar",
+<<<<<<< HEAD
         mood="indicatif",
+=======
+        mood=mood,
+>>>>>>> 2ca181e (creacion de gruopos)
         tense=tense,
         puntaje_total=puntaje
     )

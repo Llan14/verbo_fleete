@@ -2,7 +2,17 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+<<<<<<< HEAD
 First, run the development server:
+=======
+First, install the project dependencies:
+
+```bash
+npm install
+```
+
+Then, run the development server:
+>>>>>>> 2ca181e (creacion de gruopos)
 
 ```bash
 npm run dev
