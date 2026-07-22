@@ -108,6 +108,9 @@ export default function SpeakingPage() {
         return; 
       }
 
+      // Solo establecemos el estado de grabación después de obtener el stream
+      setIsRecording(true);
+
       const options = MediaRecorder.isTypeSupported("audio/webm")
         ? { mimeType: "audio/webm" }
         : undefined;
@@ -135,7 +138,6 @@ export default function SpeakingPage() {
       };
 
       mediaRecorder.start();
-      setIsRecording(true);
     } catch (err) {
       alert("No pudimos acceder a tu micrófono. Revisa los permisos de tu navegador.");
       isPressingRef.current = false;

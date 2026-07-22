@@ -2,13 +2,14 @@ import traceback
 import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from openai import AsyncOpenAI
 from app.core.database import get_db
 from app.core.security import get_usuario_actual
 from app.models import Usuario
 from app.models.response_detail import DetalleRespuesta
 from app.models.session import Sesion
 from app.schemas.writing import ChatGradeResponse, ChatRequest, ChatTurnResponse, ConfiguracionWriting, WritingContextResponse
-from app.services.ia_service import evaluar_chat_ia, generar_contexto_escritura_ia, generar_respuesta_chat_ia
+from app.services.ia_service import evaluar_chat_ia, generar_contexto_escritura_ia, generar_respuesta_chat_ia, get_openai_client
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,8 @@ router = APIRouter(prefix="/chat", tags=["Chat IA / Escritura"])
 @router.post("/generate-context", response_model=WritingContextResponse)
 async def generate_context(
     config: ConfiguracionWriting, 
-    usuario_actual: Usuario = Depends(get_usuario_actual) 
+    usuario_actual: Usuario = Depends(get_usuario_actual),
+    client: AsyncOpenAI = Depends(get_openai_client)
 ):
     try:
         resultado_ia = await generar_contexto_escritura_ia(
@@ -25,7 +27,8 @@ async def generate_context(
             contexto=config.contexto,
             grupo_verbos=config.grupo_verbos,
             mood=config.mood,
-            tense=config.tense
+            tense=config.tense,
+            client=client
         )
         
         return WritingContextResponse(
@@ -43,7 +46,8 @@ async def generate_context(
 async def chat_principal(
     request: ChatRequest,
     db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(get_usuario_actual)
+    usuario_actual: Usuario = Depends(get_usuario_actual),
+    client: AsyncOpenAI = Depends(get_openai_client)
 ):     
     try:
         config_dict = request.config.model_dump()
@@ -61,7 +65,8 @@ async def chat_principal(
         if request.gradeExercise:
             resultado_final = await evaluar_chat_ia(
                 config=config_dict,
-                historial=historial_seguro 
+                historial=historial_seguro,
+                client=client
             )
             
             score = float(resultado_final.get("score", 0))
@@ -102,7 +107,8 @@ async def chat_principal(
         resultado_turno = await generar_respuesta_chat_ia(
             mensaje=request.message,
             config=config_dict,
-            historial=historial_seguro
+            historial=historial_seguro,
+            client=client
         )
         
         if "respuesta_chat" not in resultado_turno:

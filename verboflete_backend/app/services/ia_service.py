@@ -1,21 +1,26 @@
 from app.core.config import settings
 from asyncio.log import logger
 import os
-from openai import AsyncOpenAI, AuthenticationError, RateLimitError
+from fastapi import Depends, HTTPException, status
+from openai import AsyncOpenAI, AuthenticationError
 import json
 import uuid
 
-client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None
+def get_openai_client():
+    """
+    Dependencia de FastAPI para obtener un cliente de OpenAI.
+    Lanza una excepción HTTP si la API Key no está configurada.
+    """
+    if not settings.OPENAI_API_KEY or settings.OPENAI_API_KEY == "tu_clave_secreta_aqui":
+        logger.warning("⚠️ No hay API Key de OpenAI configurada. Las funciones de IA usarán datos de prueba (Mock).")
+        return None
+    return AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 
-async def _ejecutar_con_reintentos(mensajes, fallback_mock=None, response_format={"type": "json_object"}, max_retries=3, temperature=0.7):
+async def _ejecutar_con_reintentos(client: AsyncOpenAI | None, mensajes, fallback_mock=None, response_format={"type": "json_object"}, max_retries=3, temperature=0.7):
     """
     Llama a OpenAI con reintentos. Si falla por falta de API Key o porque el JSON
     es inválido repetidas veces, devuelve un mock de prueba para no romper la app.
     """
-    if not settings.OPENAI_API_KEY or settings.OPENAI_API_KEY == "tu_clave_secreta_aqui":
-        logger.warning("⚠️ No hay API Key configurada. Usando datos de prueba (Mock).")
-        return fallback_mock
-
     if client is None:
         logger.warning("⚠️ El cliente OpenAI no pudo inicializarse. Usando datos de prueba (Mock).")
         return fallback_mock
@@ -35,7 +40,7 @@ async def _ejecutar_con_reintentos(mensajes, fallback_mock=None, response_format
             else:
                 return response.choices[0].message.content.strip()
                 
-        except (AuthenticationError, RateLimitError):
+        except AuthenticationError:
             logger.error("❌ Error de Autenticación o Cuota con OpenAI (API Key inválida o sin saldo). Usando Mock.")
             return fallback_mock
         except json.JSONDecodeError as e:
@@ -46,7 +51,7 @@ async def _ejecutar_con_reintentos(mensajes, fallback_mock=None, response_format
     logger.error("❌ Se agotaron los reintentos de la IA. Usando Mock de emergencia.")
     return fallback_mock
 
-async def generar_reading_ia(nivel: str, contexto: str, grupo_verbos: str, mood: str, tense: str):
+async def generar_reading_ia(nivel: str, contexto: str, grupo_verbos: str, mood: str, tense: str, client: AsyncOpenAI = Depends(get_openai_client)):
     # 1. El diccionario maestro de longitudes
     limites_palabras = {
         "A1": "60 y 80",
@@ -118,9 +123,9 @@ JSON:
         ]
     }
     
-    return await _ejecutar_con_reintentos(mensajes, mock_fallback)
+    return await _ejecutar_con_reintentos(client, mensajes, mock_fallback)
 
-async def generar_gramatica_huecos_ia(nivel: str, contexto: str, grupo_verbos: str, mood: str, tense: str):
+async def generar_gramatica_huecos_ia(nivel: str, contexto: str, grupo_verbos: str, mood: str, tense: str, client: AsyncOpenAI = Depends(get_openai_client)):
     # 1. Diccionario de longitud
     limites_palabras = {
         "A1": "50 a 70",
@@ -231,9 +236,9 @@ JSON ESTRICTO:
         ]
     }
     
-    return await _ejecutar_con_reintentos(mensajes, mock_fallback)
+    return await _ejecutar_con_reintentos(client, mensajes, mock_fallback)
 
-async def generar_verbo_hablar_ia(nivel: str, contexto: str, grupo_verbos: str, mood: str, tense: str):
+async def generar_verbo_hablar_ia(nivel: str, contexto: str, grupo_verbos: str, mood: str, tense: str, client: AsyncOpenAI = Depends(get_openai_client)):
     prompt = f"""
 Eres un asistente de aprendizaje de francés. Genera un ejercicio de conjugación oral en FRANCÉS 
 para un estudiante de nivel {nivel}, en modo {mood} y tiempo {tense}, basado en el contexto: "{contexto}".
@@ -264,9 +269,9 @@ JSON:
         "tense": tense,
         "persona": "je"
     }
-    return await _ejecutar_con_reintentos(mensajes, mock_fallback)
+    return await _ejecutar_con_reintentos(client, mensajes, mock_fallback)
 
-async def generar_contexto_escritura_ia(nivel: str, contexto: str, grupo_verbos: str, mood: str, tense: str):
+async def generar_contexto_escritura_ia(nivel: str, contexto: str, grupo_verbos: str, mood: str, tense: str, client: AsyncOpenAI = Depends(get_openai_client)):
     prompt = f"""
 Eres un asistente de aprendizaje de francés. Vas a iniciar un roleplay (chat) con un estudiante 
 de nivel {nivel}, en modo {mood} y tiempo {tense}, sobre el contexto: "{contexto}".
@@ -291,9 +296,9 @@ JSON:
         {"role": "user", "content": prompt}
     ]
     mock_fallback = {"escenario": "Estás en el parque.", "primer_mensaje": "Bonjour, comment ça va?"}
-    return await _ejecutar_con_reintentos(mensajes, mock_fallback)
+    return await _ejecutar_con_reintentos(client, mensajes, mock_fallback)
 
-async def generar_respuesta_chat_ia(mensaje: str, config: dict, historial: list):
+async def generar_respuesta_chat_ia(mensaje: str, config: dict, historial: list, client: AsyncOpenAI = Depends(get_openai_client)):
     mensajes_api = [
         {"role": "system", "content": f"""
 Eres un asistente de aprendizaje de francés en un roleplay con un estudiante de nivel {config['nivel']}, 
@@ -327,11 +332,11 @@ JSON:
     mensajes_api.append({"role": "user", "content": mensaje})
     
     mock_fallback = {"respuesta_chat": "Très bien! Continue...", "correcciones": []}
-    return await _ejecutar_con_reintentos(mensajes_api, mock_fallback)
+    return await _ejecutar_con_reintentos(client, mensajes_api, mock_fallback)
 
 import base64
 
-async def generar_texto_listening_ia(nivel: str, contexto: str, grupo_verbos: str, mood: str, tense: str) -> str:    
+async def generar_texto_listening_ia(nivel: str, contexto: str, grupo_verbos: str, mood: str, tense: str, client: AsyncOpenAI = Depends(get_openai_client)) -> str:    
     prompt = f"""
 Eres un asistente de aprendizaje de francés. Escribe un dictado en FRANCÉS para un estudiante de nivel {nivel},
 en modo {mood} y tiempo {tense}, sobre el contexto: "{contexto}".
@@ -349,14 +354,11 @@ REGLAS GENERALES:
     
     mensajes = [{"role": "user", "content": prompt}]
     mock_fallback = "Bonjour, ceci est un test audio car la clé API OpenAI n'est pas configurée. Écoutez bien."
-    return await _ejecutar_con_reintentos(mensajes, mock_fallback, response_format=None, temperature=0.3)
+    return await _ejecutar_con_reintentos(client, mensajes, mock_fallback, response_format=None, temperature=0.3)
 
-async def generar_audio_tts(texto: str) -> str:
-    if not settings.OPENAI_API_KEY or settings.OPENAI_API_KEY == "tu_clave_secreta_aqui":
-        logger.warning("⚠️ No hay API Key para TTS. Devolviendo audio vacío de prueba.")
-        return "" # Retornamos vacío si no hay key
-        
+async def generar_audio_tts(texto: str, client: AsyncOpenAI = Depends(get_openai_client)) -> str:
     try:
+        if not client: return "" # Si no hay cliente, devolvemos audio vacío
         response = await client.audio.speech.create(
             model="tts-1",
             voice="alloy",
@@ -369,7 +371,7 @@ async def generar_audio_tts(texto: str) -> str:
         logger.error(f"❌ Error generando audio TTS: {e}")
         return ""
 
-async def evaluar_listening_ia(texto_original: str, respuesta_usuario: str) -> dict:
+async def evaluar_listening_ia(texto_original: str, respuesta_usuario: str, client: AsyncOpenAI = Depends(get_openai_client)) -> dict:
     prompt = f"""
 Eres un asistente de aprendizaje de francés. Evalúa el siguiente dictado de comprensión oral.
 
@@ -390,9 +392,9 @@ JSON:
 """
     mensajes = [{"role": "user", "content": prompt}]
     mock_fallback = {"score": 85, "feedback": "¡Muy bien! (Evaluación de prueba)"}
-    return await _ejecutar_con_reintentos(mensajes, mock_fallback)
+    return await _ejecutar_con_reintentos(client, mensajes, mock_fallback)
 
-async def evaluar_pronunciacion_ia(texto_transcrito: str, respuesta_esperada: str, verbo_infinitivo: str, tense: str) -> dict:
+async def evaluar_pronunciacion_ia(texto_transcrito: str, respuesta_esperada: str, verbo_infinitivo: str, tense: str, client: AsyncOpenAI = Depends(get_openai_client)) -> dict:
     prompt = f"""
 Eres un profesor de francés experto en fonética y pronunciación.
 El estudiante intentó conjugar el verbo "{verbo_infinitivo}" en tiempo "{tense}".
@@ -424,9 +426,9 @@ JSON:
         "feedback_fonetico": "Tu pronunciación de 'r' fue un poco suave. Intenta vibrar más la punta de la lengua contra el paladar. ¡Sigue practicando!"
     }
 
-    return await _ejecutar_con_reintentos(mensajes, mock_fallback)
+    return await _ejecutar_con_reintentos(client, mensajes, mock_fallback)
 
-async def evaluar_chat_ia(config: dict, historial: list):
+async def evaluar_chat_ia(config: dict, historial: list, client: AsyncOpenAI = Depends(get_openai_client)):
     
     mensajes_api = [
         {"role": "system", "content": f"""
@@ -449,9 +451,9 @@ JSON:
     mensajes_api.extend(historial)
     
     mock_fallback = {"score": 90, "feedback": "Buen trabajo practicando. (Modo prueba)"}
-    return await _ejecutar_con_reintentos(mensajes_api, mock_fallback)
+    return await _ejecutar_con_reintentos(client, mensajes_api, mock_fallback)
 
-async def analizar_error_gramatical(verbo_correcto: str, respuesta_usuario: str, contexto: str = ""):
+async def analizar_error_gramatical(verbo_correcto: str, respuesta_usuario: str, contexto: str = "", client: AsyncOpenAI = Depends(get_openai_client)):
 
     try:
         prompt = f"""
@@ -482,7 +484,7 @@ JSON:
             {"role": "user", "content": prompt}
         ]
         mock_fallback = {"categoria": "GRAMATICA", "feedback": "Revisa la conjugación."}
-        return await _ejecutar_con_reintentos(mensajes, mock_fallback)
+        return await _ejecutar_con_reintentos(client, mensajes, mock_fallback)
     except Exception as e:
         logger.error(f"Error en analizar_error_gramatical: {e}")
         return {
@@ -490,7 +492,7 @@ JSON:
             "feedback": "Hubo un error al analizar tu respuesta, pero revísala con cuidado."
         }
 
-async def generar_opciones_listening_ia(texto_audio: str, nivel: str) -> dict:
+async def generar_opciones_listening_ia(texto_audio: str, nivel: str, client: AsyncOpenAI = Depends(get_openai_client)) -> dict:
     """
     Toma el texto generado para el audio y le pide a la IA que genere 
     una pregunta de comprensión de opción múltiple en formato JSON.
@@ -536,7 +538,7 @@ async def generar_opciones_listening_ia(texto_audio: str, nivel: str) -> dict:
     }
 
     try:
-        resultado_json = await _ejecutar_con_reintentos(mensajes, mock_fallback)
+        resultado_json = await _ejecutar_con_reintentos(client, mensajes, mock_fallback)
         
         # Le añadimos un ID único al ejercicio generado
         resultado_json["id"] = str(uuid.uuid4())

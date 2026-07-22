@@ -1,6 +1,7 @@
 import asyncio
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from openai import AsyncOpenAI
 from app.core.database import get_db
 from app.core.security import get_usuario_actual
 from app.models import Usuario
@@ -19,7 +20,8 @@ from app.services.ia_service import (
     generar_texto_listening_ia, 
     generar_audio_tts, 
     evaluar_listening_ia,
-    generar_opciones_listening_ia # <-- Nueva función hipotética para estructurar el cuestionario
+    generar_opciones_listening_ia,
+    get_openai_client
 )
 
 router = APIRouter(prefix="/listening", tags=["Módulo Escuchar"])
@@ -27,7 +29,8 @@ router = APIRouter(prefix="/listening", tags=["Módulo Escuchar"])
 @router.post("/generate-opciones", response_model=ListeningOpcionesResponse)
 async def listening_generate_opciones(
     config: ConfiguracionListening,
-    usuario_actual: Usuario = Depends(get_usuario_actual)
+    usuario_actual: Usuario = Depends(get_usuario_actual),
+    client: AsyncOpenAI = Depends(get_openai_client)
 ):
     try:
         # 1. Generamos el texto (esto tiene que ir primero por fuerza)
@@ -36,14 +39,15 @@ async def listening_generate_opciones(
             contexto=config.contexto,
             grupo_verbos=config.grupo_verbos,
             mood=config.mood,
-            tense=config.tense
+            tense=config.tense,
+            client=client
         )
         
         # 2. ⚡ AQUÍ ESTÁ LA MAGIA DE LA VELOCIDAD ⚡
         # Mandamos a pedir el audio y las opciones al MISMO TIEMPO
         audio_b64, cuestionario_ia = await asyncio.gather(
-            generar_audio_tts(texto),
-            generar_opciones_listening_ia(texto, config.nivel)
+            generar_audio_tts(texto, client=client),
+            generar_opciones_listening_ia(texto, config.nivel, client=client)
         )
         
         return ListeningOpcionesResponse(

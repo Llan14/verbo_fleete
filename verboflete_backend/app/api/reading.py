@@ -2,9 +2,10 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from app.core.security import get_usuario_actual
 from app.models import Usuario
+from openai import AsyncOpenAI
 from app.schemas.reading import CalificarReadingRequest, ConfiguracionReading, ReadingGenerateResponse
-from app.services.ia_service import generar_reading_ia
 from app.core.database import get_db
+from app.services.ia_service import generar_reading_ia, get_openai_client
 from app.models.session import Sesion
 from app.models.response_detail import DetalleRespuesta
 
@@ -15,16 +16,17 @@ router = APIRouter(prefix="/reading", tags=["Módulo Lectura"])
 @router.post("/generate", response_model=ReadingGenerateResponse)
 async def reading_generate(
     config: ConfiguracionReading,
-    usuario_actual: Usuario = Depends(get_usuario_actual)
+    usuario_actual: Usuario = Depends(get_usuario_actual),
+    client: AsyncOpenAI = Depends(get_openai_client)
 ):
     try:
-        # Llamamos a la función chingona que acabamos de hacer
         datos_ia = await generar_reading_ia(
             nivel=config.nivel,
             contexto=config.contexto,
             grupo_verbos=config.grupo_verbos,
             mood=config.mood,
-            tense=config.tense
+            tense=config.tense,
+            client=client
         )
         
         # FastAPI y Pydantic se encargan de validar que el JSON venga bien

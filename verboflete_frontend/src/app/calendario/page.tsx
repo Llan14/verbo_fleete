@@ -79,8 +79,10 @@ export default function CalendarioPage() {
   const tareasAgrupadas = useMemo<TareasPorDia>(() => {
     const mapaTareas: TareasPorDia = new Map();
     tareas.forEach(tarea => {
-      const fechaTarea = new Date(`${tarea.fecha_entrega}T00:00:00`);
-      const claveFecha = `${fechaTarea.getFullYear()}-${fechaTarea.getMonth()}-${fechaTarea.getDate()}`;
+      // Convertimos la fecha de la tarea (que viene en UTC) a un objeto Date local.
+      // El constructor de Date maneja la conversión de zona horaria automáticamente.
+      const fechaLocalTarea = new Date(tarea.fecha_entrega);
+      const claveFecha = `${fechaLocalTarea.getFullYear()}-${fechaLocalTarea.getMonth()}-${fechaLocalTarea.getDate()}`;
       
       if (!mapaTareas.has(claveFecha)) {
         mapaTareas.set(claveFecha, []);
@@ -154,11 +156,10 @@ export default function CalendarioPage() {
           {/* Días del mes */}
           {Array.from({ length: diasEnMes }).map((_, index) => {
             const dia = index + 1;
-            const fechaCelda = new Date(anio, mes, dia);
             const hoy = new Date();
             const esHoy = hoy.getDate() === dia && hoy.getMonth() === mes && hoy.getFullYear() === anio;
 
-            const claveFecha = `${anio}-${mes}-${dia}`;
+            const claveFecha = `${anio}-${mes}-${dia}`; // La clave de la celda se basa en la fecha local actual.
             const tareasDelDia = tareasAgrupadas.get(claveFecha) || [];
             return (
               <div

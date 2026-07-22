@@ -1,7 +1,7 @@
 import logging
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, status
 from sqlalchemy.orm import Session
-from openai import OpenAI
+from openai import OpenAI, AsyncOpenAI
 import tempfile
 import shutil
 import os
@@ -12,10 +12,11 @@ from app.core.security import get_usuario_actual
 from app.models import Usuario
 from app.models.session import Sesion # Importar Sesion
 from app.models.response_detail import DetalleRespuesta 
-from app.services.ia_service import generar_verbo_hablar_ia, evaluar_pronunciacion_ia
+from app.services.ia_service import generar_verbo_hablar_ia, evaluar_pronunciacion_ia, get_openai_client
 from app.schemas.speaking import ConfiguracionSpeaking, EjercicioSpeakingResponse, ValidarAudioRequest
 from app.core.config import settings
 
+# Este cliente síncrono es para Whisper, que no tiene un método async en la librería v1
 client = OpenAI(api_key=settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None
 
 logger = logging.getLogger(__name__)
@@ -23,15 +24,18 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/speaking", tags=["Módulo Hablar"])
 
 @router.post("/generar", response_model=EjercicioSpeakingResponse)
-async def generar_ejercicio_speaking(config: ConfiguracionSpeaking):
+async def generar_ejercicio_speaking(
+    config: ConfiguracionSpeaking,
+    openai_client: AsyncOpenAI = Depends(get_openai_client)
+):
     try:
-
         datos_ia = await generar_verbo_hablar_ia(
             nivel=config.nivel,
             contexto=config.contexto,
             grupo_verbos=config.grupo_verbos,
             mood=config.mood,
-            tense=config.tense
+            tense=config.tense,
+            client=openai_client
         )
         
         infinitivo = datos_ia["infinitivo"]
@@ -90,6 +94,7 @@ async def validar_audio(
     tense: str = Form(...),
     db: Session = Depends(get_db),
     usuario_actual: Usuario = Depends(get_usuario_actual),
+    openai_client: AsyncOpenAI = Depends(get_openai_client),
     config: str | None = Form(default=None),
 ):
 
@@ -157,7 +162,8 @@ async def validar_audio(
         texto_transcrito=texto_transcrito,
         respuesta_esperada=respuesta_esperada,
         verbo_infinitivo=verbo_infinitivo,
-        tense=tense
+        tense=tense,
+        client=openai_client
     )
 
     es_correcto_foneticamente = feedback_fonetico_ia.get("es_correcto_foneticamente", False)

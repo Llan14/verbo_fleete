@@ -1,9 +1,10 @@
 import logging
 from fastapi import APIRouter, Depends, HTTPException
+from openai import AsyncOpenAI
 from app.core.security import get_usuario_actual
 from app.models import Usuario
 from app.schemas.grammar import ConfiguracionGramatica, GramaticaGenerateResponse
-from app.services.ia_service import generar_gramatica_huecos_ia
+from app.services.ia_service import generar_gramatica_huecos_ia, get_openai_client
 from app.core.database import get_db
 from app.models.response_detail import DetalleRespuesta
 from app.models.session import Sesion
@@ -16,7 +17,8 @@ router = APIRouter(prefix="/grammar", tags=["Módulo Gramática (Huecos)"])
 @router.post("/generate", response_model=GramaticaGenerateResponse)
 async def gramatica_generate(
     config: ConfiguracionGramatica,
-    usuario_actual: Usuario = Depends(get_usuario_actual)
+    usuario_actual: Usuario = Depends(get_usuario_actual),
+    client: AsyncOpenAI = Depends(get_openai_client)
 ):
     try:
         # Llamamos al motor de IA con tus 5 parámetros sagrados
@@ -25,7 +27,8 @@ async def gramatica_generate(
             contexto=config.contexto,
             grupo_verbos=config.grupo_verbos,
             mood=config.mood,
-            tense=config.tense
+            tense=config.tense,
+            client=client
         )
         
         # Pydantic valida que la respuesta cumpla con la estructura exacta
@@ -49,10 +52,15 @@ async def evaluate_gramatica(
     usuario_actual: Usuario = Depends(get_usuario_actual)
 ):
     try:
-        import json
-        # 1. Parseamos el JSON original que la IA generó antes
-        ejercicio_original = json.loads(data.json_original)
-        huecos_reales = ejercicio_original.get("huecos", [])
+        import json # Importación local para mantener el scope limpio
+        
+        # 1. Parseamos el JSON original que la IA generó antes, con manejo de errores
+        try:
+            ejercicio_original = json.loads(data.json_original)
+            huecos_reales = ejercicio_original.get("huecos", [])
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="El formato del JSON original del ejercicio es inválido.")
+
         
         aciertos = 0
         total_huecos = len(huecos_reales)

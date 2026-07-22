@@ -46,10 +46,17 @@ export default function ReadingQuizPage() {
     if (savedState) {
       try {
         const parsed = JSON.parse(savedState);
-        setConfig(parsed.config);
-        setLectura(parsed.lectura);
-        setRespuestasUsuario(parsed.respuestasUsuario || {});
-        setGradeResult(parsed.gradeResult);
+        const isMockState = typeof parsed?.lectura?.texto_frances === "string"
+          && /DATOS DE PRUEBA|SIN API KEY|MODO PRUEBA/i.test(parsed.lectura.texto_frances);
+
+        if (isMockState) {
+          sessionStorage.removeItem("verboFlete_reading_quiz_state");
+        } else {
+          setConfig(parsed.config);
+          setLectura(parsed.lectura);
+          setRespuestasUsuario(parsed.respuestasUsuario || {});
+          setGradeResult(parsed.gradeResult);
+        }
       } catch (err) {
         console.error("Error leyendo la memoria:", err);
       }
@@ -71,6 +78,7 @@ export default function ReadingQuizPage() {
   const handleGenerate = async (formData: ContextData) => {
     setIsGenerating(true);
     setError("");
+    sessionStorage.removeItem("verboFlete_reading_quiz_state");
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reading/generate`, {
