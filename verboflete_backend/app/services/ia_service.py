@@ -1,14 +1,12 @@
 from app.core.config import settings
 from asyncio.log import logger
 import os
-from openai import AsyncOpenAI
 from openai import AsyncOpenAI, AuthenticationError, RateLimitError
 import json
 import uuid
 
-client =AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None
 
-import json
 async def _ejecutar_con_reintentos(mensajes, fallback_mock=None, response_format={"type": "json_object"}, max_retries=3, temperature=0.7):
     """
     Llama a OpenAI con reintentos. Si falla por falta de API Key o porque el JSON
@@ -16,6 +14,10 @@ async def _ejecutar_con_reintentos(mensajes, fallback_mock=None, response_format
     """
     if not settings.OPENAI_API_KEY or settings.OPENAI_API_KEY == "tu_clave_secreta_aqui":
         logger.warning("⚠️ No hay API Key configurada. Usando datos de prueba (Mock).")
+        return fallback_mock
+
+    if client is None:
+        logger.warning("⚠️ El cliente OpenAI no pudo inicializarse. Usando datos de prueba (Mock).")
         return fallback_mock
 
     for intento in range(max_retries):

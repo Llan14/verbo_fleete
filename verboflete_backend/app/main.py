@@ -9,6 +9,7 @@ from app.core.database import engine, Base
 # Esto asegura que SQLAlchemy "conozca" todos los modelos al iniciar,
 # previniendo errores de "modelo no encontrado" al construir relaciones.
 from app.models import user, group, task, session, response_detail
+from app.api import tasks
 
 # 2. Importaciones de los routers (Tus endpoints)
 from app.api import (
@@ -20,7 +21,8 @@ from app.api import (
     listening, 
     grammar, 
     reading,
-    groups
+    groups,
+    tasks
 )
 
 # 3. Inicialización de la aplicación
@@ -55,6 +57,7 @@ routers = [
     grammar.router,
     reading.router,
     groups.router,
+    tasks.router,
 ]
 
 # Inyectamos todas las rutas con el prefijo unificado "/api"

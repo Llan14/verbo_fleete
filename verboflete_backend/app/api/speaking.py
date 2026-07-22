@@ -16,7 +16,7 @@ from app.services.ia_service import generar_verbo_hablar_ia, evaluar_pronunciaci
 from app.schemas.speaking import ConfiguracionSpeaking, EjercicioSpeakingResponse, ValidarAudioRequest
 from app.core.config import settings
 
-client = OpenAI(api_key=settings.OPENAI_API_KEY)
+client = OpenAI(api_key=settings.OPENAI_API_KEY) if settings.OPENAI_API_KEY else None
 
 logger = logging.getLogger(__name__)
 
@@ -121,6 +121,9 @@ async def validar_audio(
         if not settings.OPENAI_API_KEY or settings.OPENAI_API_KEY == "tu_clave_secreta_aqui":
             logger.warning("⚠️ No hay API Key. Simulando transcripción exitosa.")
             texto_transcrito = respuesta_esperada  # Simulamos que lo dijo bien
+        elif client is None:
+            logger.warning("⚠️ El cliente OpenAI no pudo inicializarse. Usando entrada simulada.")
+            texto_transcrito = respuesta_esperada
         else:
             with open(nombre_archivo, "rb") as f_audio:
                 transcript = client.audio.transcriptions.create(
