@@ -49,13 +49,9 @@ class Grupo(Base):
         "Usuario",
         secondary=grupo_tutor_tabla,
         back_populates="grupos_como_tutor"
-<<<<<<< HEAD
-    )
-=======
     )
 
     # Relación Uno a Muchos: Un grupo puede tener muchas tareas.
     # 'back_populates' conecta con la relación 'grupo' en el modelo Tarea.
     # 'cascade' asegura que si se borra un grupo, sus tareas también se borren.
     tareas = relationship("Tarea", back_populates="grupo", cascade="all, delete-orphan")
->>>>>>> 2ca181e (creacion de gruopos)

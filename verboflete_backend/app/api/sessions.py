@@ -64,12 +64,8 @@ def obtener_dashboard_stats(
 
     stats = [
         TenseStatSchema(
-<<<<<<< HEAD
-            name=t.tense.capitalize(), 
-=======
-            name=t.tense.title(), 
->>>>>>> 2ca181e (creacion de gruopos)
-            score=round(t.promedio, 2), 
+            name=t.tense.capitalize(),
+            score=round(t.promedio, 2),
             total=t.total
         )
         for t in tenses_data
@@ -154,12 +150,8 @@ def obtener_dashboard_de_usuario_para_admin(
 
     stats = [
         TenseStatSchema(
-<<<<<<< HEAD
-            name=t.tense.capitalize(), 
-=======
-            name=t.tense.title(), 
->>>>>>> 2ca181e (creacion de gruopos)
-            score=round(t.promedio, 2), 
+            name=t.tense.capitalize(),
+            score=round(t.promedio, 2),
             total=t.total
         )
         for t in tenses_data

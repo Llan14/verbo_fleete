@@ -115,10 +115,7 @@ async def chat_principal(
 
     except Exception as e:
         logger.error("--- ❌ ERROR DETECTADO ---")
-<<<<<<< HEAD
-=======
-        db.rollback() # Aseguramos que no se guarde una sesión parcial si algo falla
->>>>>>> 2ca181e (creacion de gruopos)
+        db.rollback()  # Aseguramos que no se guarde una sesión parcial si algo falla
         logger.exception(e)
         raise HTTPException(
             status_code=500, 

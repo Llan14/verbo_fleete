@@ -1,11 +1,3 @@
-# .gitignore
-.env
-__pycache__/
-
-# entorno virutal
-venv/
-.venv/
-env/
-venv.bak/
-
-verbecc.log
+# Archivos de base de datos
+*.db
+*.sqlite3

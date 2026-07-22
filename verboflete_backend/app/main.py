@@ -5,15 +5,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import engine, Base
 
-<<<<<<< HEAD
-=======
 # ⚠️ Importación explícita de modelos para registro en SQLAlchemy ⚠️
 # Esto asegura que SQLAlchemy "conozca" todos los modelos al iniciar,
 # previniendo errores de "modelo no encontrado" al construir relaciones.
 from app.models import user, group, task, session, response_detail
 
-
->>>>>>> 2ca181e (creacion de gruopos)
 # 2. Importaciones de los routers (Tus endpoints)
 from app.api import (
     auth, 
