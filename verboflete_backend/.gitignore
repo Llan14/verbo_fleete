@@ -1,3 +1,16 @@
+# Entornos y secretos locales
+.env
+.env.*
+*.pem
+
 # Archivos de base de datos
 *.db
 *.sqlite3
+
+# Logs y análisis local
+*.log
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
