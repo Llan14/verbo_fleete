@@ -1,37 +1,66 @@
 "use client";
 
+import { getClientToken } from "@/lib/authToken";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
-  FaCommentDots,
-  FaHeadphonesSimple,
+  FaBook,
   FaBookOpen,
-  FaPencil,
-  FaBookOpenReader,
+  FaComments,
   FaCalendarDays,
-  FaUserTie,
-  FaUsers,
+  FaChalkboard,
+  FaChartLine,
+  FaHeadphonesSimple,
+  FaListCheck,
+  FaMicrophone,
+  FaRobot,
+  FaUserCheck,
 } from "react-icons/fa6";
+import { AppRole, getRoleFromJwt, normalizeRole } from "@/lib/rbac";
+
+type MenuItem = { name: string; href: string; icon: React.ComponentType<{ className?: string }> };
+
+const MENU_BY_ROLE: Record<AppRole, MenuItem[]> = {
+  estudiante: [
+    { name: "Lectura", href: "/alumno/lectura", icon: FaBook },
+    { name: "Gramática", href: "/alumno/gramatica", icon: FaBookOpen },
+    { name: "Escucha", href: "/alumno/escucha", icon: FaHeadphonesSimple },
+    { name: "Chat Roleplay", href: "/alumno/chatrol", icon: FaComments },
+    { name: "Habla", href: "/alumno/habla", icon: FaMicrophone },
+    { name: "Mis Tareas", href: "/alumno/tareas", icon: FaListCheck },
+    { name: "Calendario", href: "/alumno/calendario", icon: FaCalendarDays },
+  ],
+  tutor: [
+    { name: "Generar Tareas (IA)", href: "/maestro/tareas-generador", icon: FaRobot },
+    { name: "Mis Asignaciones", href: "/maestro/asignaciones", icon: FaChalkboard },
+    { name: "Calificaciones", href: "/maestro/calificaciones", icon: FaListCheck },
+    { name: "Calendario de Grupo", href: "/maestro/calendario", icon: FaCalendarDays },
+  ],
+  padres: [
+    { name: "Dashboard", href: "/padre/dashboard", icon: FaChartLine },
+    { name: "Progreso", href: "/padre/progreso", icon: FaUserCheck },
+  ],
+  admin: [
+    { name: "Usuarios", href: "/admin/usuarios", icon: FaUserCheck },
+    { name: "Calendario", href: "/calendario", icon: FaCalendarDays },
+  ],
+};
 
 export default function Menu() {
   const pathname = usePathname();
-  const [role, setRole] = useState<string | null>(null);
+  const [role, setRole] = useState<AppRole | null>(null);
 
   useEffect(() => {
-    const loadRole = async () => {
+    const loadRole = () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
+        const token = getClientToken();
+        if (!token) {
+          setRole(null);
+          return;
+        }
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuarios/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!response.ok) return;
-
-        const userData = await response.json();
-        setRole(userData.rol);
+        setRole(getRoleFromJwt(token));
       } catch {
         setRole(null);
       }
@@ -40,26 +69,8 @@ export default function Menu() {
     loadRole();
   }, []);
 
-  const menuItems = [
-    { name: "Habla", href: "/speaking/", icon: FaCommentDots },
-    { name: "Audio", href: "/listening/", icon: FaHeadphonesSimple },
-    { name: "Lectura", href: "/reading/", icon: FaBookOpenReader },
-    { name: "Gramática", href: "/grammar/", icon: FaBookOpen },
-    { name: "Chat rol", href: "/writing/", icon: FaPencil },
-    { name: "Calendario", href: "/calendario", icon: FaCalendarDays },
-  ];
-
-  const roleSpecificItems = [] as Array<{ name: string; href: string; icon: typeof FaUserTie }>;
-
-  if (role === "tutor") {
-    roleSpecificItems.push({ name: "Tutor", href: "/tutor", icon: FaUserTie });
-  }
-
-  if (role === "padres" || role === "parent") {
-    roleSpecificItems.push({ name: "Padres", href: "/padres", icon: FaUsers });
-  }
-
-  const itemsToRender = [...menuItems, ...roleSpecificItems];
+  const normalizedRole = normalizeRole(role);
+  const itemsToRender = normalizedRole ? MENU_BY_ROLE[normalizedRole] ?? [] : [];
 
   return (
     <div className="bg-menu-bg fixed top-0 left-0 h-screen w-70 shadow-xl z-50">

@@ -1,5 +1,6 @@
 "use client";
 
+import { getClientToken } from "@/lib/authToken";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -12,6 +13,21 @@ interface AlumnoSummary {
   ultimaActividad: string;
 }
 
+function formatearUltimaActividad(isoDate: string | null): string {
+  if (!isoDate) {
+    return "Sin actividad registrada";
+  }
+
+  const date = new Date(isoDate);
+  return date.toLocaleString("es-ES", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function PadresPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
@@ -20,12 +36,12 @@ export default function PadresPage() {
   useEffect(() => {
     const cargarVista = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = getClientToken();
         if (!token) {
           throw new Error("Debes iniciar sesión.");
         }
 
-        const resMe = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuarios/me`, {
+        const resMe = await fetch(`/api/usuarios/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -39,7 +55,7 @@ export default function PadresPage() {
           return;
         }
 
-        const resAlumnos = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuarios/?limit=1000`, {
+        const resAlumnos = await fetch(`/api/usuarios/me/hijos/progreso`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -47,16 +63,14 @@ export default function PadresPage() {
           throw new Error("No se pudo obtener la información de progreso.");
         }
 
-        const data: Array<{ id: number; nombre: string; apellidos: string; email: string; rol: string }> = await resAlumnos.json();
-        const listaAlumnos = data
-          .filter((u) => u.rol === "estudiante")
-          .map((u) => ({
+        const data: Array<{ id: number; nombre: string; apellidos: string; email: string; progreso: number; ultima_actividad: string | null }> = await resAlumnos.json();
+        const listaAlumnos = data.map((u) => ({
             id: u.id,
             nombre: u.nombre,
             apellidos: u.apellidos,
             email: u.email,
-            progreso: 88,
-            ultimaActividad: "Hoy a las 18:30",
+          progreso: u.progreso,
+          ultimaActividad: formatearUltimaActividad(u.ultima_actividad),
           }));
 
         setAlumnos(listaAlumnos);

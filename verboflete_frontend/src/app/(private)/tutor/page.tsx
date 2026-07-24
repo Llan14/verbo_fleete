@@ -1,170 +1,62 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
-interface Usuario {
-  id: number;
-  nombre: string;
-  apellidos: string;
-  email: string;
-  rol: string;
-}
-
-interface GrupoConMiembros {
-  id: number;
-  nombre: string;
-  descripcion?: string;
-  alumnos: Usuario[];
-  tutores: Usuario[];
-}
-
-interface DashboardState {
-  totalAlumnos: number;
-  tareasActivas: number;
-  promedioGeneral: number;
-}
+import {
+  getTeacherAssignmentResults,
+  listTeacherAssignments,
+} from "@/services/aiAssignmentsService";
+import {
+  TeacherAssignmentListItem,
+  TeacherAssignmentResultsResponse,
+} from "@/types/aiAssignments";
 
 export default function TutorPage() {
+  const [assignments, setAssignments] = useState<TeacherAssignmentListItem[]>([]);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<number | null>(null);
+  const [results, setResults] = useState<TeacherAssignmentResultsResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>("");
-  const [notice, setNotice] = useState<string>("");
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [grupos, setGrupos] = useState<GrupoConMiembros[]>([]);
-  const [alumnoSeleccionado, setAlumnoSeleccionado] = useState<string>("");
-  const [grupoSeleccionado, setGrupoSeleccionado] = useState<string>("");
-  const [form, setForm] = useState({
-    titulo: "",
-    descripcion: "",
-    fecha_entrega: "",
-  });
-  const [enviando, setEnviando] = useState(false);
+  const [loadingResults, setLoadingResults] = useState(false);
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    const cargarDatos = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          setError("Debes iniciar sesión para acceder al panel del tutor.");
-          return;
-        }
-
-        const resMe = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuarios/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!resMe.ok) {
-          throw new Error("No se pudo verificar tu sesión como tutor.");
-        }
-
-        const userData = await resMe.json();
-        if (userData.rol !== "tutor") {
-          setError("Este panel es exclusivo para usuarios con rol tutor.");
-          return;
-        }
-
-        const resGrupos = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/grupos/mis-grupos`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!resGrupos.ok) {
-          setUsuarios([]);
-          setNotice("Todavía no tienes alumnos asignados o la relación de grupos no está disponible.");
-          return;
-        }
-
-        const dataGrupos: GrupoConMiembros[] = await resGrupos.json();
-        setGrupos(dataGrupos);
-
-        const alumnosDesdeGrupos = dataGrupos.flatMap((grupo) => grupo.alumnos ?? []);
-        const alumnosUnicos = alumnosDesdeGrupos.filter(
-          (usuario, index, self) => self.findIndex((item) => item.id === usuario.id) === index
-        );
-
-        setUsuarios(alumnosUnicos);
-
-        if (alumnosUnicos.length === 0) {
-          setNotice("Aún no tienes alumnos asociados. Solicita al administrador que te asigne grupos o alumnos.");
-        }
-      } catch (err: unknown) {
-        setUsuarios([]);
-        setNotice("No se pudo cargar la lista de alumnos. Puedes seguir usando el calendario mientras se completa la asociación.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    cargarDatos();
-  }, []);
-
-  const alumnos = useMemo(() => usuarios, [usuarios]);
-
-  const gruposDelAlumno = useMemo(() => {
-    if (!alumnoSeleccionado) return [];
-
-    const alumnoId = Number(alumnoSeleccionado);
-    return grupos.filter((grupo) => grupo.alumnos.some((alumno) => alumno.id === alumnoId));
-  }, [alumnoSeleccionado, grupos]);
-
-  useEffect(() => {
-    if (!alumnoSeleccionado) {
-      setGrupoSeleccionado("");
-      return;
-    }
-
-    const alumnoId = Number(alumnoSeleccionado);
-    const primerGrupo = grupos.find((grupo) => grupo.alumnos.some((alumno) => alumno.id === alumnoId));
-    setGrupoSeleccionado(primerGrupo ? String(primerGrupo.id) : "");
-  }, [alumnoSeleccionado, grupos]);
-
-  const dashboardStats: DashboardState = {
-    totalAlumnos: alumnos.length,
-    tareasActivas: 12,
-    promedioGeneral: 86,
-  };
-
-  const handleAsignarTarea = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setEnviando(true);
-
+  const loadData = async () => {
+    setLoading(true);
+    setError("");
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("Debes iniciar sesión.");
+      const fetchedAssignments = await listTeacherAssignments();
+      setAssignments(fetchedAssignments);
+
+      if (fetchedAssignments.length > 0) {
+        const initialId = selectedAssignmentId ?? fetchedAssignments[0].assignment_id;
+        setSelectedAssignmentId(initialId);
+        await loadResults(initialId);
+      } else {
+        setResults(null);
       }
-
-      if (!alumnoSeleccionado || !grupoSeleccionado) {
-        throw new Error("Primero selecciona un alumno con grupo asignado.");
-      }
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tareas/grupo/${grupoSeleccionado}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          titulo: form.titulo,
-          descripcion: form.descripcion,
-          fecha_entrega: `${form.fecha_entrega}T00:00:00`,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.detail || "No se pudo asignar la tarea al alumno.");
-      }
-
-      setForm({ titulo: "", descripcion: "", fecha_entrega: "" });
-      setAlumnoSeleccionado("");
-      setGrupoSeleccionado("");
-      alert("Tarea asignada correctamente.");
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Error al asignar la tarea.");
+      setError(err instanceof Error ? err.message : "No se pudo cargar el panel de docente.");
     } finally {
-      setEnviando(false);
+      setLoading(false);
     }
   };
+
+  const loadResults = async (assignmentId: number) => {
+    setLoadingResults(true);
+    setError("");
+    try {
+      const data = await getTeacherAssignmentResults(assignmentId);
+      setResults(data);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "No se pudieron cargar las evaluaciones.");
+      setResults(null);
+    } finally {
+      setLoadingResults(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   if (loading) {
     return (
@@ -174,185 +66,101 @@ export default function TutorPage() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="mx-auto max-w-4xl rounded-2xl border border-rose-200 bg-rose-50 p-5 text-rose-700">
-        {error}
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-black text-primary">Panel del Tutor</h1>
-          <Link
-            href="/calendario"
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-          >
-            ← Volver al calendario
-          </Link>
-        </div>
+      <div>
+        <h1 className="text-3xl font-black text-primary">Vista de Profesor</h1>
         <p className="text-sm text-slate-600">
-          Asigna tareas, revisa el progreso y monitorea el rendimiento de los alumnos.
+          Seguimiento de evaluaciones y calificaciones por tarea.
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="Alumnos asignados" value={dashboardStats.totalAlumnos.toString()} />
-        <StatCard label="Tareas activas" value={dashboardStats.tareasActivas.toString()} />
-        <StatCard label="Promedio general" value={`${dashboardStats.promedioGeneral}%`} />
-      </div>
+      {error && <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
 
-      {notice && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-800">
-          {notice}
-        </div>
-      )}
-
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-primary">Asignar tarea a alumno</h2>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
-              {grupos.length} grupo(s)
-            </span>
-          </div>
-
-          <form className="space-y-4" onSubmit={handleAsignarTarea}>
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-slate-700">Alumno</label>
-              <select
-                value={alumnoSeleccionado}
-                onChange={(e) => setAlumnoSeleccionado(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2"
-                required
-              >
-                <option value="">Seleccione un alumno</option>
-                {alumnos.map((alumno) => (
-                  <option key={alumno.id} value={alumno.id}>
-                    {alumno.nombre} {alumno.apellidos}
-                  </option>
-                ))}
-              </select>
+      <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-3 text-xl font-black text-primary">Tareas del grupo</h2>
+          {assignments.length === 0 ? (
+            <p className="text-sm text-slate-600">No hay tareas con evaluaciones aún.</p>
+          ) : (
+            <div className="space-y-2">
+              {assignments.map((assignment) => {
+                const active = assignment.assignment_id === selectedAssignmentId;
+                return (
+                  <button
+                    key={assignment.assignment_id}
+                    onClick={async () => {
+                      setSelectedAssignmentId(assignment.assignment_id);
+                      await loadResults(assignment.assignment_id);
+                    }}
+                    className={`w-full rounded-2xl border p-4 text-left transition ${
+                      active
+                        ? "border-primary bg-primary/5"
+                        : "border-slate-200 bg-white hover:border-primary/30 hover:bg-slate-50"
+                    }`}
+                  >
+                    <p className="font-bold text-slate-800">{assignment.title}</p>
+                    <p className="text-xs text-slate-600">
+                      {assignment.module} · {assignment.group_name}
+                    </p>
+                    <p className="text-xs font-semibold text-slate-700">
+                      Enviadas: {assignment.submitted_count}/{assignment.recipients_count}
+                    </p>
+                  </button>
+                );
+              })}
             </div>
-
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-slate-700">Grupo</label>
-              <select
-                value={grupoSeleccionado}
-                onChange={(e) => setGrupoSeleccionado(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2"
-                required
-                disabled={!alumnoSeleccionado || gruposDelAlumno.length === 0}
-              >
-                <option value="">Seleccione un grupo</option>
-                {gruposDelAlumno.map((grupo) => (
-                  <option key={grupo.id} value={grupo.id}>
-                    {grupo.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-slate-700">Título</label>
-              <input
-                value={form.titulo}
-                onChange={(e) => setForm((prev) => ({ ...prev, titulo: e.target.value }))}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2"
-                placeholder="Ej. Redacción de verbos"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-slate-700">Descripción</label>
-              <textarea
-                value={form.descripcion}
-                onChange={(e) => setForm((prev) => ({ ...prev, descripcion: e.target.value }))}
-                className="min-h-[120px] w-full rounded-xl border border-slate-200 px-3 py-2"
-                placeholder="Describe la actividad"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-slate-700">Fecha de entrega</label>
-              <input
-                type="date"
-                value={form.fecha_entrega}
-                onChange={(e) => setForm((prev) => ({ ...prev, fecha_entrega: e.target.value }))}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={enviando}
-              className="rounded-xl bg-teal-600 px-4 py-2 font-semibold text-white transition hover:bg-teal-700 disabled:opacity-70"
-            >
-              {enviando ? "Asignando..." : "Guardar tarea"}
-            </button>
-          </form>
+          )}
         </section>
 
-        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-4 text-xl font-bold text-primary">Seguimiento de alumnos</h2>
-          <div className="space-y-3">
-            {alumnos.map((alumno) => (
-              <div key={alumno.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <p className="font-semibold text-slate-800">
-                      {alumno.nombre} {alumno.apellidos}
-                    </p>
-                    <p className="text-xs text-slate-500">{alumno.email}</p>
-                  </div>
-                  <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-bold text-emerald-700">
-                    En curso
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-3 text-xl font-black text-primary">Calificaciones</h2>
+          {!selectedAssignmentId || !results ? (
+            <p className="text-sm text-slate-600">Selecciona una tarea para ver las evaluaciones de los alumnos.</p>
+          ) : loadingResults ? (
+            <p className="text-sm text-slate-600">Cargando evaluaciones...</p>
+          ) : (
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="font-bold text-slate-800">{results.title}</p>
+                <p className="text-xs text-slate-600">
+                  {results.module} · {results.group_name} · entrega {new Date(results.due_at).toLocaleDateString("es-ES")}
+                </p>
+                <div className="mt-2 flex gap-2 text-xs font-semibold text-slate-700">
+                  <span className="rounded-full bg-white px-2 py-1 border border-slate-200">
+                    Enviadas: {results.submitted_count}/{results.recipients_count}
+                  </span>
+                  <span className="rounded-full bg-white px-2 py-1 border border-slate-200">
+                    Promedio: {results.average_score ?? "-"}
+                  </span>
+                  <span className="rounded-full bg-white px-2 py-1 border border-slate-200">
+                    Ponderación: {results.weight}
                   </span>
                 </div>
               </div>
-            ))}
 
-            {alumnos.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
-                No hay alumnos visibles para este tutor en la relación de grupos.
+              <div className="overflow-hidden rounded-2xl border border-slate-200">
+                <div className="grid grid-cols-[1.3fr_1.4fr_0.8fr_1fr] bg-slate-50 px-4 py-3 text-xs font-black uppercase tracking-wide text-slate-600">
+                  <span>Alumno</span>
+                  <span>Email</span>
+                  <span>Estado</span>
+                  <span>Nota</span>
+                </div>
+                <div className="divide-y divide-slate-200">
+                  {results.recipients.map((recipient) => (
+                    <div key={recipient.recipient_id} className="grid grid-cols-[1.3fr_1.4fr_0.8fr_1fr] px-4 py-3 text-sm text-slate-700">
+                      <span className="font-semibold text-slate-800">{recipient.student_name}</span>
+                      <span className="truncate pr-3">{recipient.student_email}</span>
+                      <span className="uppercase text-xs font-bold">{recipient.status}</span>
+                      <span className="font-black text-primary">{recipient.score ?? "-"}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            )}
-          </div>
+            </div>
+        )}
         </section>
       </div>
-
-      <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-4 text-xl font-bold text-primary">Calificaciones</h2>
-        <div className="grid gap-3 md:grid-cols-3">
-          <GradeItem label="Gramática" value="91%" />
-          <GradeItem label="Lectura" value="88%" />
-          <GradeItem label="Speaking" value="84%" />
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl font-black text-primary">{value}</p>
-    </div>
-  );
-}
-
-function GradeItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <p className="text-sm font-semibold text-slate-700">{label}</p>
-      <p className="mt-2 text-2xl font-black text-primary">{value}</p>
     </div>
   );
 }

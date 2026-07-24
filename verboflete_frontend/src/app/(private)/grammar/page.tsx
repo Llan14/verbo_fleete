@@ -1,5 +1,6 @@
 "use client";
 
+import { getClientToken } from "@/lib/authToken";
 import { useState, useEffect } from "react";
 import ContextForm, { ContextData } from "@/components/ContextForm";
 
@@ -73,7 +74,7 @@ export default function GrammarPage() {
     setIsGenerating(true);
     setError("");
     try {
-      const token = localStorage.getItem("token");
+      const token = getClientToken();
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/grammar/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
@@ -118,7 +119,7 @@ export default function GrammarPage() {
     const jsonOriginalString = JSON.stringify(ejercicio);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getClientToken();
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/grammar/evaluate`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },

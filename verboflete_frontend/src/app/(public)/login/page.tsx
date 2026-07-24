@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { loginUser } from '@/services/authService';
 import Cookies from 'js-cookie';
+import { normalizeRole, roleHomePath } from '@/lib/rbac';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -28,9 +29,18 @@ export default function LoginPage() {
 
     try {
       const data = await loginUser(email, password);
-      
       localStorage.setItem('token', data.access_token);
-      Cookies.set('token', data.access_token, { expires: 7 }); 
+      
+      Cookies.set('token', data.access_token, {
+        expires: 7,
+        sameSite: 'strict',
+        secure: process.env.NODE_ENV === 'production',
+      });
+      Cookies.set('access_token', data.access_token, {
+        expires: 7,
+        sameSite: 'strict',
+        secure: process.env.NODE_ENV === 'production',
+      });
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuarios/me`, {
         headers: { "Authorization": `Bearer ${data.access_token}` }
@@ -40,15 +50,8 @@ export default function LoginPage() {
       
       const userData = await res.json();
 
-      if (userData.rol === "admin" || userData.rol === "administrador") {
-        router.push('/admin/usuarios/');
-      } else if (userData.rol === "tutor") {
-        router.push('/tutor/');
-      } else if (userData.rol === "padres" || userData.rol === "parent") {
-        router.push('/padres/');
-      } else {
-        router.push('/dashboard/');
-      }
+      const normalizedRole = normalizeRole(userData.rol);
+      router.push(roleHomePath(normalizedRole));
       
     } catch (err: any) {
       setError(err.message || "Error al iniciar sesión");

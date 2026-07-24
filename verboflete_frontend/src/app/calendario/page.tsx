@@ -1,7 +1,9 @@
-// src/app/calendario/page.tsx
 "use client";
 
+import { getClientToken } from "@/lib/authToken";
+
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import CalendarGrid from "../../components/calendario/CalendarGrid";
 import CalendarHeader from "../../components/calendario/CalendarHeader";
 import type { CalendarTask } from "../../components/calendario/types";
@@ -31,6 +33,7 @@ function formatDateKey(date: Date) {
 }
 
 export default function CalendarioPage() {
+  const router = useRouter();
   const [tareas, setTareas] = useState<CalendarTask[]>([]);
   const [fechaActual, setFechaActual] = useState<Date>(new Date());
   const [loading, setLoading] = useState(true);
@@ -43,7 +46,7 @@ export default function CalendarioPage() {
       setError(null);
 
       try {
-        const token = localStorage.getItem("token");
+        const token = getClientToken();
 
         if (!token) {
           throw new Error("No estás autenticado. Debes iniciar sesión para ver el calendario.");
@@ -122,6 +125,14 @@ export default function CalendarioPage() {
     setFechaActual((prev) => addMonths(prev, incremento));
   };
 
+  const volverEnApp = () => {
+    if (window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push("/dashboard/");
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center gap-3 text-slate-600">
@@ -143,6 +154,15 @@ export default function CalendarioPage() {
 
   return (
     <div className="mx-auto max-w-7xl p-4 md:p-8">
+      <div className="mb-4 flex items-center justify-start">
+        <button
+          onClick={volverEnApp}
+          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+        >
+          ← Volver
+        </button>
+      </div>
+
       <CalendarHeader
         monthLabel={monthLabel}
         onPreviousMonth={() => cambiarMes(-1)}

@@ -1,8 +1,16 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Table
 from sqlalchemy.sql import func
 from app.core.database import Base
 from sqlalchemy.orm import relationship, backref
 from .group import grupo_alumno_tabla, grupo_tutor_tabla
+
+
+padre_alumno_tabla = Table(
+    "padre_alumno",
+    Base.metadata,
+    Column("padre_id", Integer, ForeignKey("usuarios.id"), primary_key=True),
+    Column("alumno_id", Integer, ForeignKey("usuarios.id"), primary_key=True),
+)
 
 # Definimos los roles para mantener consistencia en toda la aplicación.
 # Esto evita errores por strings mágicos como "admin" o "Admin".
@@ -10,6 +18,7 @@ class Roles:
     ADMIN = "admin"
     TUTOR = "tutor"
     ESTUDIANTE = "estudiante"
+    PADRES = "padres"
 
 
 class Usuario(Base):
@@ -44,4 +53,20 @@ class Usuario(Base):
         "Grupo",
         secondary=grupo_tutor_tabla,
         back_populates="tutores"
+    )
+
+    hijos_asociados = relationship(
+        "Usuario",
+        secondary=padre_alumno_tabla,
+        primaryjoin=id == padre_alumno_tabla.c.padre_id,
+        secondaryjoin=id == padre_alumno_tabla.c.alumno_id,
+        back_populates="padres_asociados",
+    )
+
+    padres_asociados = relationship(
+        "Usuario",
+        secondary=padre_alumno_tabla,
+        primaryjoin=id == padre_alumno_tabla.c.alumno_id,
+        secondaryjoin=id == padre_alumno_tabla.c.padre_id,
+        back_populates="hijos_asociados",
     )

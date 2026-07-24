@@ -1,5 +1,6 @@
 "use client";
 
+import { getClientToken } from "@/lib/authToken";
 import { useState, useEffect } from "react";
 
 interface Usuario {
@@ -25,7 +26,7 @@ export default function PerfilPage() {
   useEffect(() => {
     const fetchPerfil = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = getClientToken();
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuarios/me`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
@@ -62,7 +63,7 @@ export default function PerfilPage() {
     setPwdLoading(true);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getClientToken();
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuarios/${usuario.id}/password`, {
         method: "PATCH",
         headers: {

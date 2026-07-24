@@ -1,21 +1,46 @@
 "use client";
 
+import { getClientToken } from "@/lib/authToken";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
+import { getRoleFromJwt, roleHomePath, roleLabel } from "@/lib/rbac";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [userName, setUserName] = useState("Usuario");
+  const [homeHref, setHomeHref] = useState("/dashboard/");
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const userName = "Estudiante"; 
+  useEffect(() => {
+    const loadUser = () => {
+      try {
+        const token = getClientToken();
+        if (!token) {
+          setUserName("Usuario");
+          setHomeHref("/login");
+          return;
+        }
+
+        const role = getRoleFromJwt(token);
+        setUserName(roleLabel(role));
+        setHomeHref(roleHomePath(role));
+      } catch {
+        setUserName("Usuario");
+        setHomeHref("/login");
+      }
+    };
+
+    loadUser();
+  }, []);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   const handleLogout = () => {
-    Cookies.remove("token");
+        Cookies.remove("token");
+    Cookies.remove("access_token");
     sessionStorage.removeItem("verboFleteContext");
     router.push("/login");
   };
@@ -70,7 +95,7 @@ export default function Header() {
             </Link>
 
             <Link 
-              href="/dashboard/"
+              href={homeHref}
               prefetch={false} 
               className="block px-4 py-2 text-sm text-text-main hover:bg-gray-50 hover:text-primary transition-colors font-medium"
               onClick={() => setIsMenuOpen(false)}

@@ -1,5 +1,6 @@
 "use client";
 
+import { getClientToken } from "@/lib/authToken";
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link"; 
 
@@ -44,7 +45,7 @@ function useDashboardData() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = getClientToken();
         const headers = { "Authorization": `Bearer ${token}` };
 
         const [dashRes, histRes] = await Promise.all([

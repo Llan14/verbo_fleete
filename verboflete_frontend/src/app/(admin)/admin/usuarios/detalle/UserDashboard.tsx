@@ -1,5 +1,6 @@
 "use client";
 
+import { getClientToken } from "@/lib/authToken";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -22,7 +23,7 @@ export default function UserDashboard({ usuarioId }: { usuarioId: string }) {
   useEffect(() => {
     const fetchUserDashboard = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = getClientToken();
         if (!token) { router.push("/login"); return; }
         const resMe = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuarios/me`, {
           headers: { "Authorization": `Bearer ${token}` }

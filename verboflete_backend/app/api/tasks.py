@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
+from app.core.dependencies import require_roles
 from app.core.database import get_db
 from app.core.security import get_usuario_actual
 from app.models import Usuario, Grupo, Tarea
+from app.models.user import Roles
 from app.schemas.task import TareaCreate, TareaResponse
 
 router = APIRouter()
@@ -14,7 +16,7 @@ def crear_tarea_en_grupo(
     grupo_id: int,
     tarea: TareaCreate,
     db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(get_usuario_actual)
+    usuario_actual: Usuario = Depends(require_roles(Roles.TUTOR))
 ):
     """
     Crea una nueva tarea para un grupo específico.
@@ -51,7 +53,7 @@ def crear_tarea_en_grupo(
 def obtener_tareas_calendario(
     grupo_id: Optional[int] = Query(None, description="Filtro opcional para que el admin vea las tareas de un solo grupo."),
     db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(get_usuario_actual)
+    usuario_actual: Usuario = Depends(require_roles(Roles.ESTUDIANTE, Roles.TUTOR))
 ):
     """
     Obtiene la lista de tareas visibles para el usuario actual.

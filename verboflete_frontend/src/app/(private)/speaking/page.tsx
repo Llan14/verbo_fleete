@@ -1,5 +1,6 @@
 "use client";
 
+import { getClientToken } from "@/lib/authToken";
 import { useState, useRef, useEffect } from "react";
 import ContextForm from "@/components/ContextForm";
 
@@ -77,7 +78,7 @@ export default function SpeakingPage() {
     setResultado(null);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getClientToken();
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/speaking/generar`, {
         method: "POST",
         headers: {
@@ -168,7 +169,7 @@ export default function SpeakingPage() {
     formData.append("tense", ejercicio.tense);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getClientToken();
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/speaking/validar`, {
         method: "POST",
         headers: {

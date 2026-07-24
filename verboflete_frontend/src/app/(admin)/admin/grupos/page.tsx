@@ -1,5 +1,6 @@
 "use client";
 
+import { getClientToken } from "@/lib/authToken";
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
@@ -40,7 +41,7 @@ export default function AdminGruposPage() {
   const fetchAllData = async () => {
     setLoading(true);
     setError(null);
-    const token = localStorage.getItem('token');
+    const token = getClientToken();
     if (!token) {
       setError("No autenticado.");
       setLoading(false);
@@ -81,7 +82,7 @@ export default function AdminGruposPage() {
   const handleCrearGrupo = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const token = localStorage.getItem('token');
+    const token = getClientToken();
 
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/grupos`, {
@@ -109,7 +110,7 @@ export default function AdminGruposPage() {
 
   const handleAsignarUsuario = async (rol: 'tutor' | 'alumno') => {
     setError(null);
-    const token = localStorage.getItem('token');
+    const token = getClientToken();
     const usuarioId = rol === 'tutor' ? tutorSeleccionado : alumnoSeleccionado;
 
     if (!grupoSeleccionado || !usuarioId) {

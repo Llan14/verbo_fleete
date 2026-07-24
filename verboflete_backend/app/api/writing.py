@@ -42,6 +42,7 @@ async def generate_context(
             detail=f"Error al conectar con OpenAI para generar el contexto: {str(e)}"
         )
     
+@router.post("", response_model=None)
 @router.post("/", response_model=None)
 async def chat_principal(
     request: ChatRequest,

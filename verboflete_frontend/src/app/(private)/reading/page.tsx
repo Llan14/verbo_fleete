@@ -1,5 +1,6 @@
 "use client";
 
+import { getClientToken } from "@/lib/authToken";
 import { useState, useEffect } from "react";
 import ContextForm, { ContextData } from "@/components/ContextForm";
 
@@ -80,7 +81,7 @@ export default function ReadingQuizPage() {
     setError("");
     sessionStorage.removeItem("verboFlete_reading_quiz_state");
     try {
-      const token = localStorage.getItem("token");
+      const token = getClientToken();
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reading/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
@@ -123,7 +124,7 @@ export default function ReadingQuizPage() {
     const jsonOriginalString = JSON.stringify(lectura);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getClientToken();
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reading/evaluate`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },

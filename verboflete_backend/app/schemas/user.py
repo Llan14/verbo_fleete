@@ -31,3 +31,26 @@ class UsuarioUpdateAdmin(BaseModel):
     apellidos: Optional[str] = None
     email: Optional[str] = None
     rol: Optional[str] = None
+
+
+class AsignarHijoRequest(BaseModel):
+    alumno_id: int
+
+
+class AlumnoVinculadoResponse(BaseModel):
+    id: int
+    nombre: str
+    apellidos: str
+    email: EmailStr
+
+    class Config:
+        from_attributes = True
+
+
+class HijoProgresoResponse(BaseModel):
+    id: int
+    nombre: str
+    apellidos: str
+    email: EmailStr
+    progreso: int
+    ultima_actividad: datetime | None

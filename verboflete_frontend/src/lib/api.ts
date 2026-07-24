@@ -1,17 +1,20 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { getClientToken } from "@/lib/authToken";
+
+const API_URL = "/api";
 
 export async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const token = typeof window !== "undefined" ? getClientToken() : null;
+  const method = (options.method ?? 'GET').toUpperCase();
 
   const headers: HeadersInit = {
     ...(token && { Authorization: `Bearer ${token}` }),
     ...options.headers,
   };
 
-  if (!(options.body instanceof FormData)) {
+  if (method !== 'GET' && !(options.body instanceof FormData)) {
     (headers as Record<string, string>)['Content-Type'] = 'application/json';
   }
 

@@ -1,6 +1,8 @@
 "use client";
 
+import { getClientToken } from "@/lib/authToken";
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import ContextForm from "@/components/ContextForm";
 
 interface CorreccionChat {
@@ -27,6 +29,8 @@ interface ChatGradeResponse {
 }
 
 export default function WritingChatPage() {
+  const router = useRouter();
+
   // Estados principales
   const [config, setConfig] = useState<any>(null);
   const [escenario, setEscenario] = useState("");
@@ -92,15 +96,27 @@ export default function WritingChatPage() {
 
   const handleStartChat = async (formData: any) => {
     setIsGeneratingContext(true);
+    setError("");
     try {
-      const token = localStorage.getItem("token");
+      const token = getClientToken();
+      if (!token) {
+        throw new Error("Tu sesión expiró. Inicia sesión nuevamente.");
+      }
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/generate-context`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify(formData)
       });
 
-      if (!res.ok) throw new Error("Error al generar el escenario.");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        if (res.status === 401) {
+          throw new Error("Sesión no válida o expirada. Vuelve a iniciar sesión.");
+        }
+        throw new Error(errData?.detail || "Error al generar el escenario.");
+      }
+
       const data = await res.json();
       
       setConfig(formData);
@@ -108,7 +124,10 @@ export default function WritingChatPage() {
       setHistorial([{ role: "assistant", content: data.primer_mensaje }]);
       setGradeResult(null);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "Error al generar el escenario.");
+      if ((err.message || "").includes("Sesión")) {
+        router.push("/login");
+      }
     } finally {
       setIsGeneratingContext(false);
     }
@@ -124,6 +143,7 @@ export default function WritingChatPage() {
     const nuevoHistorial = [...historial, { role: "user" as const, content: textoUsuario }];
     setHistorial(nuevoHistorial);
     setIsSending(true);
+    setError("");
 
     const historialLimpio = nuevoHistorial.map(msg => ({
       role: msg.role,
@@ -131,7 +151,11 @@ export default function WritingChatPage() {
     }));
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getClientToken();
+      if (!token) {
+        throw new Error("Tu sesión expiró. Inicia sesión nuevamente.");
+      }
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
@@ -143,12 +167,21 @@ export default function WritingChatPage() {
         })
       });
 
-      if (!res.ok) throw new Error("Error en la respuesta del servidor");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        if (res.status === 401) {
+          throw new Error("Sesión no válida o expirada. Vuelve a iniciar sesión.");
+        }
+        throw new Error(errData?.detail || "Error en la respuesta del servidor");
+      }
 
       const data: ChatTurnResponse = await res.json();
       setHistorial(prev => [...prev, { role: "assistant", content: data.respuesta_chat, correcciones: data.correcciones }]);
     } catch (err: any) {
-      setError("Error al enviar el mensaje.");
+      setError(err.message || "Error al enviar el mensaje.");
+      if ((err.message || "").includes("Sesión")) {
+        router.push("/login");
+      }
     } finally {
       setIsSending(false);
     }
@@ -156,6 +189,7 @@ export default function WritingChatPage() {
 
   const handleGradeExercise = async () => {
     setIsGrading(true);
+    setError("");
 
     // 🔥 TAMBIÉN LIMPIAMOS AQUÍ PARA LA CALIFICACIÓN FINAL
     const historialLimpio = historial.map(msg => ({
@@ -164,7 +198,11 @@ export default function WritingChatPage() {
     }));
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getClientToken();
+      if (!token) {
+        throw new Error("Tu sesión expiró. Inicia sesión nuevamente.");
+      }
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
@@ -176,12 +214,21 @@ export default function WritingChatPage() {
         })
       });
 
-      if (!res.ok) throw new Error("Error al calificar");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        if (res.status === 401) {
+          throw new Error("Sesión no válida o expirada. Vuelve a iniciar sesión.");
+        }
+        throw new Error(errData?.detail || "Error al calificar");
+      }
 
       const data: ChatGradeResponse = await res.json();
       setGradeResult(data);
-    } catch {
-      setError("Error al calificar.");
+    } catch (err: any) {
+      setError(err.message || "Error al calificar.");
+      if ((err.message || "").includes("Sesión")) {
+        router.push("/login");
+      }
     } finally {
       setIsGrading(false);
     }

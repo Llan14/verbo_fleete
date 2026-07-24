@@ -1,5 +1,6 @@
 "use client";
 
+import { getClientToken } from "@/lib/authToken";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
@@ -54,7 +55,7 @@ export default function ListeningPage() {
     setReproduciendo(false);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getClientToken();
       const respuesta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/listening/generate-opciones`, {
         method: "POST",
         headers: {
@@ -93,7 +94,7 @@ export default function ListeningPage() {
     if (!opcionSeleccionada || !ejercicio) return;
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getClientToken();
       const respuesta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/listening/grade-opciones`, {
         method: "POST",
         headers: {

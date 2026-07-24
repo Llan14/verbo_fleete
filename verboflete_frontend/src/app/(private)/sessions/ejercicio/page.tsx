@@ -1,5 +1,6 @@
 "use client";
 
+import { getClientToken } from "@/lib/authToken";
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation"; // <-- Usamos useSearchParams en lugar de useParams
@@ -36,7 +37,7 @@ function ReporteSesionContenido() {
   useEffect(() => {
     const fetchReporte = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = getClientToken();
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions/me/${sesionId}`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
