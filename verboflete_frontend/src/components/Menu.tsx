@@ -4,6 +4,7 @@ import { getClientToken } from "@/lib/authToken";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import {
   FaBook,
   FaBookOpen,
@@ -77,9 +78,46 @@ export default function Menu() {
   return (
     <div className="bg-menu-bg fixed top-0 left-0 h-screen w-70 shadow-xl z-50">
       <div className="flex flex-col items-center py-8">
-        <img className="w-32 mb-4" src="/logo.png" alt="Logo" />
+        <div className="mb-4">
+          <div className="hidden md:block">
+            <Image
+              src="/logoMHT_color.png"
+              alt="MasterHubTraining"
+              width={136}
+              height={40}
+              className="block dark:hidden"
+              priority
+            />
+            <Image
+              src="/logoMHT_blanco.png"
+              alt="MasterHubTraining"
+              width={136}
+              height={40}
+              className="hidden dark:block"
+              priority
+            />
+          </div>
+          <div className="block md:hidden">
+            <Image
+              src="/Logo sin Slogan_Color.png"
+              alt="MasterHubTraining Compacto"
+              width={54}
+              height={54}
+              className="block dark:hidden"
+              priority
+            />
+            <Image
+              src="/Logo sin Slogan_letra_blanca.png"
+              alt="MasterHubTraining Compacto"
+              width={54}
+              height={54}
+              className="hidden dark:block"
+              priority
+            />
+          </div>
+        </div>
         <h1 className="font-bold text-menu-text text-xl tracking-wide">
-          VerboFlete
+          MasterHubTraining
         </h1>
       </div>
 

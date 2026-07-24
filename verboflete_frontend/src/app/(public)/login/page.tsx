@@ -1,12 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { loginUser } from '@/services/authService';
 import Cookies from 'js-cookie';
 import { normalizeRole, roleHomePath } from '@/lib/rbac';
+import BrandCtaButton from '@/components/branding/BrandCtaButton';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -61,18 +60,26 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-background p-4">
+    <div className="w-full flex items-center justify-center bg-background p-4 md:p-8">
       <div className="flex w-full max-w-5xl bg-surface rounded-2xl shadow-2xl overflow-hidden min-h-[600px]">
         
-        <div className="hidden md:flex w-1/2 bg-secondary relative flex-col items-center justify-center text-white">
-          <div className="absolute inset-0 opacity-95">
-            <Image
-              src="/torre.png"
-              alt="Fondo de la aplicación"
-              fill
-              className="object-cover mix-blend-overlay"
-              priority
-            />
+        <div className="hidden md:flex w-1/2 bg-secondary relative flex-col items-center justify-center text-white overflow-hidden">
+          <video
+            className="absolute inset-0 h-full w-full object-cover opacity-65"
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+          >
+            <source src="/Logo animado.mp4" type="video/mp4" />
+          </video>
+
+          <div className="relative z-10 px-8 text-center">
+            <h2 className="text-3xl text-white font-brand-heading">MHT Academic Platform</h2>
+            <p className="mt-3 text-sm text-white/85 font-brand-support">
+              Aprende con IA, practica por modulos y mide tu evolucion.
+            </p>
           </div>
         </div>
 
@@ -113,14 +120,12 @@ export default function LoginPage() {
               />
             </div>
 
-            <button
+            <BrandCtaButton
               type="submit"
+              label={isLoading ? 'Conectando...' : 'Empezar'}
               disabled={isLoading}
-              className={`w-full bg-primary text-white font-semibold py-3 rounded-lg shadow-lg transition-colors duration-200 mt-4 
-                ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-primary-hover cursor-pointer'}`}
-            >
-              {isLoading ? 'Conectando...' : 'Iniciar Sesión'}
-            </button>
+              className="mt-4 w-full"
+            />
             
             {error && (
               <p className="text-red-500 text-sm text-center font-medium mt-2">{error}</p>

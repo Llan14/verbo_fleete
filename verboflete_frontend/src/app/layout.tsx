@@ -1,5 +1,5 @@
-import "./globals.css";
 import { Inter } from "next/font/google";
+import "./globals.css";
 import ThemeInitializer from "@/components/ThemeInitializer";
 import ThemeToggleGlobal from "@/components/ThemeToggleGlobal";
 

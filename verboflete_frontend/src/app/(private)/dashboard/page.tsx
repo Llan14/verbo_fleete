@@ -3,6 +3,7 @@
 import { getClientToken } from "@/lib/authToken";
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link"; 
+import ModuleFooterDecoration from "@/components/branding/ModuleFooterDecoration";
 import {
   Bar,
   BarChart,
@@ -453,6 +454,8 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      <ModuleFooterDecoration />
     </div>
   );
 }
