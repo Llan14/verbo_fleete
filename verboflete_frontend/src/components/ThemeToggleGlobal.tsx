@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 const THEME_KEY = "verboflete-theme";
 
@@ -22,7 +23,11 @@ function applyTheme(theme: ThemeMode) {
 }
 
 export default function ThemeToggleGlobal() {
+  const pathname = usePathname();
   const [theme, setTheme] = useState<ThemeMode>("light");
+
+  const cleanPath = pathname.endsWith("/") && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
+  const hideOnAuthScreens = cleanPath === "/login" || cleanPath === "/recuperar-acceso";
 
   useEffect(() => {
     const current = document.documentElement.getAttribute("data-theme");
@@ -36,6 +41,10 @@ export default function ThemeToggleGlobal() {
     setTheme(nextTheme);
     applyTheme(nextTheme);
   };
+
+  if (hideOnAuthScreens) {
+    return null;
+  }
 
   return (
     <button

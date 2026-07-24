@@ -14,7 +14,7 @@ const ROLE_HOME: Record<AppRole, string> = {
   admin: "/admin/usuarios",
 };
 
-const PUBLIC_ROUTES = ["/login", "/registro"];
+const PUBLIC_ROUTES = ["/login", "/registro", "/recuperar-acceso"];
 
 export function normalizeRole(rawRole: string | null | undefined): AppRole | null {
   if (!rawRole) {
