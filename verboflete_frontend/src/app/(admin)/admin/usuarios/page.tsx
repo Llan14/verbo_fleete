@@ -423,6 +423,7 @@ export default function AdminUsuariosPage() {
                 <select value={formData.rol} onChange={e => setFormData({...formData, rol: e.target.value})} className="w-full bg-background border border-border px-3 py-2 rounded-xl outline-none focus:border-menu-active font-medium">
                   <option value="estudiante">Estudiante</option>
                   <option value="tutor">Tutor / Maestro</option>
+                  <option value="padres">Padres de Familia</option>
                   <option value="admin">Administrador</option>
                 </select>
               </div>
@@ -462,6 +463,7 @@ export default function AdminUsuariosPage() {
                 <select value={editFormData.rol} onChange={e => setEditFormData({...editFormData, rol: e.target.value})} className="w-full bg-background border border-border px-3 py-2 rounded-xl outline-none focus:border-menu-active font-medium">
                   <option value="estudiante">Estudiante</option>
                   <option value="tutor">Tutor / Maestro</option>
+                  <option value="padres">Padres de Familia</option>
                   <option value="admin">Administrador</option>
                 </select>
               </div>

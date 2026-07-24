@@ -2,16 +2,43 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   FaCommentDots,
   FaHeadphonesSimple,
   FaBookOpen,
   FaPencil,
-  FaBookOpenReader, // <-- Nuevo ícono importado
+  FaBookOpenReader,
+  FaCalendarDays,
+  FaUserTie,
+  FaUsers,
 } from "react-icons/fa6";
 
 export default function Menu() {
   const pathname = usePathname();
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadRole = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuarios/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) return;
+
+        const userData = await response.json();
+        setRole(userData.rol);
+      } catch {
+        setRole(null);
+      }
+    };
+
+    loadRole();
+  }, []);
 
   const menuItems = [
     { name: "Habla", href: "/speaking/", icon: FaCommentDots },
@@ -19,7 +46,20 @@ export default function Menu() {
     { name: "Lectura", href: "/reading/", icon: FaBookOpenReader },
     { name: "Gramática", href: "/grammar/", icon: FaBookOpen },
     { name: "Chat rol", href: "/writing/", icon: FaPencil },
+    { name: "Calendario", href: "/calendario", icon: FaCalendarDays },
   ];
+
+  const roleSpecificItems = [] as Array<{ name: string; href: string; icon: typeof FaUserTie }>;
+
+  if (role === "tutor") {
+    roleSpecificItems.push({ name: "Tutor", href: "/tutor", icon: FaUserTie });
+  }
+
+  if (role === "padres" || role === "parent") {
+    roleSpecificItems.push({ name: "Padres", href: "/padres", icon: FaUsers });
+  }
+
+  const itemsToRender = [...menuItems, ...roleSpecificItems];
 
   return (
     <div className="bg-menu-bg fixed top-0 left-0 h-screen w-70 shadow-xl z-50">
@@ -32,9 +72,9 @@ export default function Menu() {
 
       <nav className="mt-4">
         <ul className="space-y-1">
-          {menuItems.map((item) => {
+          {itemsToRender.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
             return (
               <li key={item.href}>

@@ -1,41 +1,57 @@
+// src/app/calendario/page.tsx
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import TareaModal from "../../components/TareaModal"; // ⚠️ Asegúrate que la ruta sea correcta
+import { useEffect, useMemo, useState } from "react";
+import CalendarGrid from "../../components/calendario/CalendarGrid";
+import CalendarHeader from "../../components/calendario/CalendarHeader";
+import type { CalendarTask } from "../../components/calendario/types";
+import TareaModal from "../../components/TareaModal";
 
-// --- Tipos de Datos ---
-export interface Tarea { // Exportamos el tipo para poder usarlo en TareaModal
-  id: number;
-  titulo: string;
-  descripcion?: string;
-  fecha_entrega: string; // La API devuelve un string ISO 8601
-  grupo_id: number;
+const diasSemana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+
+type TareasPorDia = Map<string, CalendarTask[]>;
+
+function getDaysInMonth(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
 }
 
-type TareasPorDia = Map<string, Tarea[]>;
+function getMonthStartWeekday(date: Date) {
+  const dayIndex = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  return dayIndex === 0 ? 6 : dayIndex - 1;
+}
+
+function addMonths(date: Date, amount: number) {
+  const next = new Date(date);
+  next.setMonth(next.getMonth() + amount);
+  return next;
+}
+
+function formatDateKey(date: Date) {
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
 
 export default function CalendarioPage() {
-  // --- Estados ---
-  const [tareas, setTareas] = useState<Tarea[]>([]);
-  const [fechaActual, setFechaActual] = useState(new Date());
-  const [cargando, setCargando] = useState(true);
+  const [tareas, setTareas] = useState<CalendarTask[]>([]);
+  const [fechaActual, setFechaActual] = useState<Date>(new Date());
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tareaSeleccionada, setTareaSeleccionada] = useState<Tarea | null>(null);
+  const [tareaSeleccionada, setTareaSeleccionada] = useState<CalendarTask | null>(null);
 
-  // --- Petición de Datos ---
   useEffect(() => {
     const fetchTareas = async () => {
-      setCargando(true);
+      setLoading(true);
       setError(null);
+
       try {
         const token = localStorage.getItem("token");
+
         if (!token) {
-          throw new Error("No estás autenticado. Por favor, inicia sesión.");
+          throw new Error("No estás autenticado. Debes iniciar sesión para ver el calendario.");
         }
 
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/calendario/tareas`, {
           headers: {
-            "Authorization": `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
         });
 
@@ -43,69 +59,82 @@ export default function CalendarioPage() {
           throw new Error("No se pudieron cargar las tareas del calendario.");
         }
 
-        const data: Tarea[] = await response.json();
+        const data: CalendarTask[] = await response.json();
         setTareas(data);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Ocurrió un error al cargar el calendario.");
       } finally {
-        setCargando(false);
+        setLoading(false);
       }
     };
 
     fetchTareas();
   }, []);
 
-  // --- Lógica Matemática del Mes ---
   const mes = fechaActual.getMonth();
   const anio = fechaActual.getFullYear();
+  const diasEnMes = getDaysInMonth(fechaActual);
+  const offsetInicio = getMonthStartWeekday(fechaActual);
+  const monthLabel = fechaActual.toLocaleString("es-ES", {
+    month: "long",
+    year: "numeric",
+  });
 
-  const diasEnMes = new Date(anio, mes + 1, 0).getDate();
-  const primerDiaDelMes = new Date(anio, mes, 1).getDay(); // 0: Domingo, 1: Lunes...
-  
-  // Ajuste para que la semana empiece en Lunes (0) y termine en Domingo (6)
-  const diaInicialAjustado = (primerDiaDelMes === 0) ? 6 : primerDiaDelMes - 1;
-
-  const diasSemana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-
-  const cambiarMes = (incremento: number) => {
-    setFechaActual(prevFecha => {
-      const nuevaFecha = new Date(prevFecha);
-      nuevaFecha.setMonth(nuevaFecha.getMonth() + incremento);
-      return nuevaFecha;
-    });
-  };
-
-  // --- Agrupación de Tareas (Optimización) ---
   const tareasAgrupadas = useMemo<TareasPorDia>(() => {
-    const mapaTareas: TareasPorDia = new Map();
-    tareas.forEach(tarea => {
-      // Convertimos la fecha de la tarea (que viene en UTC) a un objeto Date local.
-      // El constructor de Date maneja la conversión de zona horaria automáticamente.
-      const fechaLocalTarea = new Date(tarea.fecha_entrega);
-      const claveFecha = `${fechaLocalTarea.getFullYear()}-${fechaLocalTarea.getMonth()}-${fechaLocalTarea.getDate()}`;
-      
-      if (!mapaTareas.has(claveFecha)) {
-        mapaTareas.set(claveFecha, []);
-      }
-      mapaTareas.get(claveFecha)?.push(tarea);
+    const mapa = new Map<string, CalendarTask[]>();
+
+    tareas.forEach((tarea) => {
+      const fechaTarea = new Date(tarea.fecha_entrega);
+      const clave = formatDateKey(fechaTarea);
+      const tareasExistentes = mapa.get(clave) ?? [];
+      tareasExistentes.push(tarea);
+      mapa.set(clave, tareasExistentes);
     });
-    return mapaTareas;
+
+    return mapa;
   }, [tareas]);
 
-  // --- Renderizado ---
-  if (cargando) {
+  const diasCalendar = useMemo(() => {
+    const celdas: Array<{ type: "empty" | "day"; date?: Date }> = [];
+
+    for (let i = 0; i < offsetInicio; i += 1) {
+      celdas.push({ type: "empty" });
+    }
+
+    for (let dia = 1; dia <= diasEnMes; dia += 1) {
+      celdas.push({
+        type: "day",
+        date: new Date(anio, mes, dia),
+      });
+    }
+
+    const totalCeldas = celdas.length;
+    const restante = (7 - (totalCeldas % 7)) % 7;
+
+    for (let i = 0; i < restante; i += 1) {
+      celdas.push({ type: "empty" });
+    }
+
+    return celdas;
+  }, [anio, mes, diasEnMes, offsetInicio]);
+
+  const cambiarMes = (incremento: number) => {
+    setFechaActual((prev) => addMonths(prev, incremento));
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center text-text-muted">
-        <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="font-medium">Cargando tu calendario...</p>
+      <div className="flex min-h-[70vh] flex-col items-center justify-center gap-3 text-slate-600">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-teal-500 border-t-transparent" />
+        <p className="font-medium">Cargando calendario...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-8 text-center max-w-md mx-auto">
-        <div className="bg-rose-50 text-rose-700 p-4 rounded-2xl border border-rose-200">
+      <div className="mx-auto max-w-lg p-6">
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-center text-rose-700">
           {error}
         </div>
       </div>
@@ -113,104 +142,35 @@ export default function CalendarioPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in duration-500">
-      {/* Cabecera */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-black text-primary tracking-tight capitalize">
-          {fechaActual.toLocaleString("es-ES", { month: "long", year: "numeric" })}
-        </h1>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => cambiarMes(-1)}
-            className="px-4 py-2 bg-surface border border-border rounded-lg font-bold text-primary hover:bg-background transition-colors"
-          >
-            ‹ Anterior
-          </button>
-          <button
-            onClick={() => cambiarMes(1)}
-            className="px-4 py-2 bg-surface border border-border rounded-lg font-bold text-primary hover:bg-background transition-colors"
-          >
-            Siguiente ›
-          </button>
-        </div>
-      </div>
+    <div className="mx-auto max-w-7xl p-4 md:p-8">
+      <CalendarHeader
+        monthLabel={monthLabel}
+        onPreviousMonth={() => cambiarMes(-1)}
+        onNextMonth={() => cambiarMes(1)}
+      />
 
-      {/* Contenedor del Calendario */}
-      <div className="bg-surface border border-border rounded-2xl shadow-sm overflow-hidden">
-        {/* Días de la semana */}
-        <div className="grid grid-cols-7 border-b border-border">
-          {diasSemana.map(dia => (
-            <div key={dia} className="p-3 text-center text-xs font-bold text-text-muted uppercase tracking-wider">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
+          {diasSemana.map((dia) => (
+            <div key={dia} className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-500">
               {dia}
             </div>
           ))}
         </div>
 
-        {/* Cuadrícula de días */}
-        <div className="grid grid-cols-7">
-          {/* Celdas vacías al inicio */}
-          {Array.from({ length: diaInicialAjustado }).map((_, index) => (
-            <div key={`empty-${index}`} className="border-r border-b border-border bg-background/50"></div>
-          ))}
-
-          {/* Días del mes */}
-          {Array.from({ length: diasEnMes }).map((_, index) => {
-            const dia = index + 1;
-            const hoy = new Date();
-            const esHoy = hoy.getDate() === dia && hoy.getMonth() === mes && hoy.getFullYear() === anio;
-
-            const claveFecha = `${anio}-${mes}-${dia}`; // La clave de la celda se basa en la fecha local actual.
-            const tareasDelDia = tareasAgrupadas.get(claveFecha) || [];
-            return (
-              <div
-                key={dia}
-                className="relative min-h-[120px] border-r border-b border-border p-2 flex flex-col group hover:bg-teal-50/20 transition-colors"
-              >
-                {/* Número del día */}
-                <span className={`font-bold text-sm ${
-                  esHoy 
-                    ? "bg-teal-500 text-white rounded-full w-7 h-7 flex items-center justify-center" 
-                    : "text-text-muted"
-                }`}>
-                  {dia}
-                </span>
-
-                {/* Contenedor de Tareas */}
-                <div className="mt-2 space-y-1 overflow-y-auto flex-1">
-                  {tareasDelDia.map(tarea => (
-                    <div 
-                      key={tarea.id} 
-                      title={tarea.titulo}
-                      onClick={() => setTareaSeleccionada(tarea)}
-                      className="bg-blue-100 text-blue-800 text-xs font-semibold rounded-md px-2 py-1 truncate cursor-pointer hover:ring-2 hover:ring-blue-300"
-                    >
-                      {tarea.titulo}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Celdas vacías al final para completar la cuadrícula */}
-          {Array.from({ length: (7 - (diaInicialAjustado + diasEnMes) % 7) % 7 }).map((_, index) => (
-            <div key={`empty-end-${index}`} className="border-r border-b border-border bg-background/50"></div>
-          ))}
-        </div>
+        <CalendarGrid
+          cells={diasCalendar}
+          tasksByDay={tareasAgrupadas}
+          onSelectTask={setTareaSeleccionada}
+        />
       </div>
 
-      {tareas.length === 0 && !cargando && (
-        <div className="text-center mt-8 p-4 bg-surface border border-border rounded-2xl">
-            <h3 className="font-bold text-primary">¡Todo despejado!</h3>
-            <p className="text-text-muted text-sm">No tienes tareas programadas en tu calendario por ahora.</p>
+      {tareas.length === 0 && !loading && (
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-600">
+          No tienes tareas programadas en este calendario por el momento.
         </div>
       )}
 
-      <footer className="text-center mt-8 text-sm text-text-muted">
-        <p>Calendario de tareas integrado. Las fechas de entrega se muestran según tu zona horaria.</p>
-      </footer>
-
-      {/* Renderizamos el modal si hay una tarea seleccionada */}
       {tareaSeleccionada && (
         <TareaModal tarea={tareaSeleccionada} onClose={() => setTareaSeleccionada(null)} />
       )}

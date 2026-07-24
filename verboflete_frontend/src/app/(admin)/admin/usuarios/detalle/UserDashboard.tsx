@@ -29,11 +29,7 @@ export default function UserDashboard({ usuarioId }: { usuarioId: string }) {
         });
         if (!resMe.ok) throw new Error("Error de sesión");
         const userData = await resMe.json();
-<<<<<<< HEAD
         if (userData.rol !== "admin" && userData.rol !== "administrador") {
-=======
-        if (userData.rol !== "admin") {
->>>>>>> 2ca181e (creacion de gruopos)
           router.push("/dashboard"); return; 
         }
         const resStats = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions/admin/user-dashboard/${usuarioId}`, {

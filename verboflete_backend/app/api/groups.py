@@ -97,3 +97,26 @@ def obtener_grupos(db: Session = Depends(get_db), usuario_actual: Usuario = Depe
     
     grupos = db.query(Grupo).all()
     return grupos
+
+@router.get("/mis-grupos", response_model=List[GrupoConMiembros])
+def obtener_grupos_del_tutor(
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(get_usuario_actual)
+):
+    if usuario_actual.rol not in (Roles.ADMIN, Roles.TUTOR):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo los administradores y tutores pueden consultar grupos asignados."
+        )
+
+    if usuario_actual.rol == Roles.ADMIN:
+        grupos = db.query(Grupo).all()
+    else:
+        grupos = (
+            db.query(Grupo)
+            .join(Grupo.tutores)
+            .filter(Usuario.id == usuario_actual.id)
+            .all()
+        )
+
+    return grupos

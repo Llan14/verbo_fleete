@@ -15,6 +15,8 @@ interface EjercicioSpeaking {
 interface ResultadoEvaluacion {
   transcripcion: string;
   es_correcto: boolean;
+  es_correcto_simple?: boolean;
+  es_correcto_foneticamente?: boolean;
   respuesta_esperada: string;
   puntaje: number;
   mensaje: string;

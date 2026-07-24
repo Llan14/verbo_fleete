@@ -40,8 +40,12 @@ export default function LoginPage() {
       
       const userData = await res.json();
 
-      if (userData.rol === "admin") {
+      if (userData.rol === "admin" || userData.rol === "administrador") {
         router.push('/admin/usuarios/');
+      } else if (userData.rol === "tutor") {
+        router.push('/tutor/');
+      } else if (userData.rol === "padres" || userData.rol === "parent") {
+        router.push('/padres/');
       } else {
         router.push('/dashboard/');
       }

@@ -117,10 +117,16 @@ export default function DashboardPage() {
     <div className=" mx-auto font-sans animate-in fade-in slide-in-from-top-4 duration-700">
       
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-border pb-4">
-        <div>
+        <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-3xl font-black text-primary tracking-tight text-balance">
             Mi Progreso
           </h1>
+          <Link
+            href="/calendario"
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          >
+            ← Volver al calendario
+          </Link>
         </div>
         <StatBadge
           label="Total Ejercicios"
