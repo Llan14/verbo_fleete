@@ -3,6 +3,18 @@
 import { getClientToken } from "@/lib/authToken";
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link"; 
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 interface TenseStat {
   name: string;
@@ -26,6 +38,18 @@ interface DashboardData {
   } | null;
 }
 
+interface Badge {
+  key: string;
+  label: string;
+  unlocked: boolean;
+}
+
+interface GamificationData {
+  current_streak: number;
+  longest_streak: number;
+  badges: Badge[];
+}
+
 interface SesionResumen {
   id: number;
   fecha: string;
@@ -39,6 +63,7 @@ interface SesionResumen {
 function useDashboardData() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [historial, setHistorial] = useState<SesionResumen[]>([]);
+  const [gamification, setGamification] = useState<GamificationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -53,6 +78,8 @@ function useDashboardData() {
           fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions/me`, { headers })
         ]);
 
+        const gamificationRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions/gamification`, { headers });
+
         if (dashRes.status === 401 || histRes.status === 401) {
           throw new Error("Sesión expirada");
         }
@@ -62,9 +89,11 @@ function useDashboardData() {
 
         const jsonDash = await dashRes.json();
         const jsonHist = await histRes.json();
+        const jsonGamification = gamificationRes.ok ? await gamificationRes.json() : null;
         
         setData(jsonDash);
         setHistorial(jsonHist);
+        setGamification(jsonGamification);
       } catch (err: unknown) {
         if (err instanceof Error) {
           setError(err.message);
@@ -79,19 +108,64 @@ function useDashboardData() {
     fetchDashboard();
   }, []);
 
-  return { data, historial, loading, error };
+  return { data, historial, gamification, loading, error };
 }
 
 // === Componente Principal ===
 export default function DashboardPage() {
-  const { data, historial, loading, error } = useDashboardData();
+  const { data, historial, gamification, loading, error } = useDashboardData();
   const [mostrarTodos, setMostrarTodos] = useState(false);
+
+  const descargarReportePdf = async () => {
+    try {
+      const token = getClientToken();
+      const respuesta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sessions/report/pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!respuesta.ok) {
+        throw new Error("No se pudo generar el PDF");
+      }
+
+      const blob = await respuesta.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "reporte_progreso.pdf";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      alert("No se pudo descargar el reporte PDF.");
+    }
+  };
 
   // Memorizamos el cálculo de la porción del historial a mostrar para evitar
   // renderizados innecesarios cuando otros estados cambian.
   const displayedHistorial = useMemo(() => {
     return mostrarTodos ? historial : historial.slice(0, 4);
   }, [historial, mostrarTodos]);
+
+  const chartStats = useMemo(() => {
+    if (!data?.stats) return [];
+    return data.stats.map((item) => ({
+      tense: item.name,
+      score: Number(item.score.toFixed(1)),
+      total: item.total,
+    }));
+  }, [data]);
+
+  const chartSessions = useMemo(() => {
+    return [...historial]
+      .reverse()
+      .slice(0, 12)
+      .map((sesion, index) => ({
+        sesion: `S${index + 1}`,
+        puntaje: sesion.puntaje_total,
+      }));
+  }, [historial]);
 
   if (loading) {
     return (
@@ -128,6 +202,12 @@ export default function DashboardPage() {
           >
             ← Volver al calendario
           </Link>
+          <button
+            onClick={descargarReportePdf}
+            className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-700 transition hover:bg-teal-100"
+          >
+            Descargar PDF
+          </button>
         </div>
         <StatBadge
           label="Total Ejercicios"
@@ -169,35 +249,110 @@ export default function DashboardPage() {
               Puntuación y Dominio por Tiempo Verbal
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {stats.map((tense, index) => (
-                <div key={`${tense.name}-${index}`} className="relative">
-                  {weakestTense?.name === tense.name && (
-                    <div className="absolute -top-3 -right-2 bg-rose-500 text-white text-[10px] font-black px-3 py-1 rounded-full z-10 shadow-md animate-bounce tracking-tighter">
-                      PRIORIDAD
+            {stats.length === 0 ? (
+              <div className="col-span-2 py-12 text-center border-2 border-dashed border-border rounded-3xl bg-background">
+                <p className="text-text-muted font-medium">
+                  Aún no hay datos para mostrar gráficas. ¡Haz tu primer ejercicio!
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                <div className="h-72 w-full rounded-2xl border border-border bg-background p-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartStats} margin={{ top: 16, right: 16, left: 0, bottom: 12 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#94a3b833" />
+                      <XAxis dataKey="tense" tick={{ fill: "#64748b", fontSize: 12 }} />
+                      <YAxis domain={[0, 100]} tick={{ fill: "#64748b", fontSize: 12 }} />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="score" name="Maestría (%)" fill="#0ea5e9" radius={[8, 8, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {chartSessions.length > 1 && (
+                  <div className="h-72 w-full rounded-2xl border border-border bg-background p-4">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={chartSessions} margin={{ top: 16, right: 16, left: 0, bottom: 12 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#94a3b833" />
+                        <XAxis dataKey="sesion" tick={{ fill: "#64748b", fontSize: 12 }} />
+                        <YAxis domain={[0, 100]} tick={{ fill: "#64748b", fontSize: 12 }} />
+                        <Tooltip />
+                        <Legend />
+                        <Line
+                          type="monotone"
+                          dataKey="puntaje"
+                          name="Evolución"
+                          stroke="#2563eb"
+                          strokeWidth={3}
+                          dot={{ r: 3 }}
+                          activeDot={{ r: 6 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {stats.map((tense, index) => (
+                    <div key={`${tense.name}-${index}`} className="relative">
+                      {weakestTense?.name === tense.name && (
+                        <div className="absolute -top-3 -right-2 bg-rose-500 text-white text-[10px] font-black px-3 py-1 rounded-full z-10 shadow-md animate-bounce tracking-tighter">
+                          PRIORIDAD
+                        </div>
+                      )}
+                      <TenseCard
+                        name={tense.name}
+                        score={tense.score}
+                        total={tense.total}
+                        color={getColor(tense.name)}
+                      />
                     </div>
-                  )}
-                  <TenseCard
-                    name={tense.name}
-                    score={tense.score}
-                    total={tense.total}
-                    color={getColor(tense.name)}
-                  />
+                  ))}
                 </div>
-              ))}
-              
-              {stats.length === 0 && (
-                <div className="col-span-2 py-12 text-center border-2 border-dashed border-border rounded-3xl bg-background">
-                  <p className="text-text-muted font-medium">
-                    Aún no hay datos para mostrar gráficas. ¡Haz tu primer ejercicio!
-                  </p>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
 
         <div className="space-y-6">
+          {gamification && (
+            <div className="bg-surface p-6 rounded-3xl shadow-sm border border-border h-fit">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-primary">🔥 Gamificación</h3>
+                <span className="text-[10px] font-black text-indigo-700 bg-indigo-100 px-2 py-1 rounded-full uppercase">
+                  Streaks
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="rounded-2xl border border-border bg-background p-3 text-center">
+                  <p className="text-[10px] uppercase tracking-wider text-text-muted font-bold">Racha Actual</p>
+                  <p className="text-2xl font-black text-primary">{gamification.current_streak}</p>
+                </div>
+                <div className="rounded-2xl border border-border bg-background p-3 text-center">
+                  <p className="text-[10px] uppercase tracking-wider text-text-muted font-bold">Mejor Racha</p>
+                  <p className="text-2xl font-black text-primary">{gamification.longest_streak}</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {gamification.badges.map((badge) => (
+                  <div
+                    key={badge.key}
+                    className={`rounded-xl border px-3 py-2 text-sm font-semibold ${
+                      badge.unlocked
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                        : "border-slate-200 bg-slate-50 text-slate-500"
+                    }`}
+                  >
+                    {badge.unlocked ? "✅" : "🔒"} {badge.label}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {report?.weaknesses && report.weaknesses.length > 0 && (
             <div className="bg-surface p-6 rounded-3xl shadow-sm border border-border h-fit">
               <div className="flex items-center justify-between mb-6">

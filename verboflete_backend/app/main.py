@@ -8,7 +8,7 @@ from app.core.database import engine, Base
 # ⚠️ Importación explícita de modelos para registro en SQLAlchemy ⚠️
 # Esto asegura que SQLAlchemy "conozca" todos los modelos al iniciar,
 # previniendo errores de "modelo no encontrado" al construir relaciones.
-from app.models import user, group, task, session, response_detail, exercise_template, assignment
+from app.models import user, group, task, session, response_detail, exercise_template, assignment, vocabulary
 from app.api import tasks
 
 # 2. Importaciones de los routers (Tus endpoints)
@@ -25,6 +25,7 @@ from app.api import (
     tasks,
     ai,
     assignments,
+    vocabulary,
 )
 
 # 3. Inicialización de la aplicación
@@ -62,6 +63,7 @@ routers = [
     tasks.router,
     ai.router,
     assignments.router,
+    vocabulary.router,
 ]
 
 # Inyectamos todas las rutas con el prefijo unificado "/api"

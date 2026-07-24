@@ -51,3 +51,15 @@ class DashboardResponse(BaseModel):
     weakestTense: Optional[WeakestTenseSchema]
     stats: List[TenseStatSchema]
     report: ReportDataSchema
+
+
+class BadgeItemSchema(BaseModel):
+    key: str
+    label: str
+    unlocked: bool
+
+
+class GamificationResponse(BaseModel):
+    current_streak: int
+    longest_streak: int
+    badges: List[BadgeItemSchema]

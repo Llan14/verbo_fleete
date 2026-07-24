@@ -44,6 +44,13 @@ export default function ListeningPage() {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [reproduciendo, setReproduciendo] = useState<boolean>(false);
+  const [velocidadAudio, setVelocidadAudio] = useState<number>(1);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = velocidadAudio;
+    }
+  }, [velocidadAudio, ejercicio]);
 
   // Llama al nuevo endpoint del backend que creamos para las opciones múltiples
   const cargarNuevoEjercicio = async () => {
@@ -208,6 +215,22 @@ export default function ListeningPage() {
         <span className="text-[11px] text-text-muted font-bold uppercase tracking-wider">
           {reproduciendo ? "Escuchando..." : "Reproducir audio"}
         </span>
+
+        <div className="flex items-center gap-2 pt-2">
+          {[0.75, 1, 1.25, 1.5].map((speed) => (
+            <button
+              key={speed}
+              onClick={() => setVelocidadAudio(speed)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                velocidadAudio === speed
+                  ? "bg-primary text-white border-primary"
+                  : "bg-background text-text-muted border-border hover:border-primary/60"
+              }`}
+            >
+              {speed}x
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Cuestionario */}

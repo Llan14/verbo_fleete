@@ -548,3 +548,44 @@ async def generar_opciones_listening_ia(texto_audio: str, nivel: str, client: As
     except Exception as e:
         # En caso de que la IA falle o el JSON no se pueda parsear, retornamos un error seguro
         raise Exception(f"Error al generar las opciones con la IA: {str(e)}")
+
+
+async def generar_vocabulario_ia(nivel: str, contexto: str, cantidad: int, client: AsyncOpenAI = Depends(get_openai_client)) -> dict:
+    prompt = f"""
+Eres un profesor de frances. Genera vocabulario util para un estudiante de nivel {nivel}
+en el contexto: "{contexto}".
+
+REGLAS:
+- Devuelve exactamente {cantidad} palabras o expresiones.
+- Todo en minusculas y sin markdown.
+- 'termino' en frances.
+- 'traduccion' en espanol breve.
+- 'ejemplo' en frances usando el termino.
+
+JSON estricto:
+{{
+  "items": [
+    {{"termino": "...", "traduccion": "...", "ejemplo": "..."}}
+  ]
+}}
+"""
+
+    mensajes = [
+        {"role": "system", "content": "Experto en didactica de idiomas. Salida JSON estricta."},
+        {"role": "user", "content": prompt},
+    ]
+
+    mock_fallback = {
+        "items": [
+            {"termino": "bonjour", "traduccion": "hola", "ejemplo": "bonjour, comment ca va?"},
+            {"termino": "merci", "traduccion": "gracias", "ejemplo": "merci pour ton aide."},
+            {"termino": "partir", "traduccion": "salir", "ejemplo": "nous allons partir demain."},
+            {"termino": "arriver", "traduccion": "llegar", "ejemplo": "je vais arriver a midi."},
+            {"termino": "bureau", "traduccion": "oficina", "ejemplo": "elle travaille au bureau."},
+            {"termino": "voyage", "traduccion": "viaje", "ejemplo": "ce voyage est magnifique."},
+            {"termino": "ecouter", "traduccion": "escuchar", "ejemplo": "j'aime ecouter des podcasts."},
+            {"termino": "pratiquer", "traduccion": "practicar", "ejemplo": "il faut pratiquer chaque jour."},
+        ][:cantidad]
+    }
+
+    return await _ejecutar_con_reintentos(client, mensajes, mock_fallback)

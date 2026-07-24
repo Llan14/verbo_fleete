@@ -16,6 +16,7 @@ import {
   FaMicrophone,
   FaRobot,
   FaUserCheck,
+  FaLanguage,
 } from "react-icons/fa6";
 import { AppRole, getRoleFromJwt, normalizeRole } from "@/lib/rbac";
 
@@ -28,6 +29,7 @@ const MENU_BY_ROLE: Record<AppRole, MenuItem[]> = {
     { name: "Escucha", href: "/alumno/escucha", icon: FaHeadphonesSimple },
     { name: "Chat Roleplay", href: "/alumno/chatrol", icon: FaComments },
     { name: "Habla", href: "/alumno/habla", icon: FaMicrophone },
+    { name: "Vocabulario", href: "/alumno/vocabulario", icon: FaLanguage },
     { name: "Mis Tareas", href: "/alumno/tareas", icon: FaListCheck },
     { name: "Calendario", href: "/alumno/calendario", icon: FaCalendarDays },
   ],
