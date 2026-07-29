@@ -1,3 +1,5 @@
+"use client";
+
 import CalendarDayCell from "./CalendarDayCell";
 import type { CalendarTask } from "./types";
 
@@ -23,7 +25,8 @@ export default function CalendarGrid({
           return (
             <div
               key={`empty-${index}`}
-              className="min-h-[100px] border-r border-b border-slate-200 bg-slate-50/40"
+              // Se sincronizan las alturas y colores adaptativos con los de CalendarDayCell
+              className="min-h-[110px] border-r border-b border-slate-200/80 dark:border-white/5 bg-slate-100/50 dark:bg-slate-950/20"
             />
           );
         }
@@ -35,6 +38,7 @@ export default function CalendarGrid({
         return (
           <CalendarDayCell
             key={`${key}-${index}`}
+            type="day"
             date={date}
             tasks={tasks}
             onSelectTask={onSelectTask}

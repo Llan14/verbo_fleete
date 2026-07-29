@@ -17,7 +17,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} font-sans antialiased bg-background text-text-main transition-colors duration-300`}>
         <ThemeInitializer />
         {children}
         <ThemeToggleGlobal />

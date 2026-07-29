@@ -1,3 +1,5 @@
+"use client";
+
 interface CalendarHeaderProps {
   monthLabel: string;
   onPreviousMonth: () => void;
@@ -10,26 +12,25 @@ export default function CalendarHeader({
   onNextMonth,
 }: CalendarHeaderProps) {
   return (
-    <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 pb-4 mb-4">
+      <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white capitalize tracking-tight">
+        {monthLabel}
+      </h1>
+
+      <div className="flex items-center gap-2">
         <button
-          type="button"
           onClick={onPreviousMonth}
-          className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          className="rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/60 px-4 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white backdrop-blur-md cursor-pointer shadow-sm"
+          aria-label="Mes anterior"
         >
-          Mes Anterior
+          ←
         </button>
-
-        <div className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold capitalize text-slate-800">
-          {monthLabel}
-        </div>
-
         <button
-          type="button"
           onClick={onNextMonth}
-          className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          className="rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/60 px-4 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white backdrop-blur-md cursor-pointer shadow-sm"
+          aria-label="Mes siguiente"
         >
-          Mes Siguiente
+          →
         </button>
       </div>
     </div>

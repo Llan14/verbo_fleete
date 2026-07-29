@@ -4,6 +4,7 @@ import { getClientToken } from "@/lib/authToken";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ContextForm from "@/components/ContextForm";
+import { GlassCard } from "@/components/GlassCard";
 
 interface CorreccionChat {
   error: string;
@@ -31,14 +32,12 @@ interface ChatGradeResponse {
 export default function WritingChatPage() {
   const router = useRouter();
 
-  // Estados principales
   const [config, setConfig] = useState<any>(null);
   const [escenario, setEscenario] = useState("");
   const [historial, setHistorial] = useState<MensajeChat[]>([]);
   const [gradeResult, setGradeResult] = useState<ChatGradeResponse | null>(null);
   const [isCorrectionEnabled, setIsCorrectionEnabled] = useState(true);
   
-  // Estados de UI
   const [mensajeActual, setMensajeActual] = useState("");
   const [isLoaded, setIsLoaded] = useState(false);
   const [isGeneratingContext, setIsGeneratingContext] = useState(false);
@@ -48,9 +47,7 @@ export default function WritingChatPage() {
 
   const mensajesEndRef = useRef<HTMLDivElement>(null);
 
-  // 1. CARGA INICIAL UNIFICADA
   useEffect(() => {
-    // Limpiamos las llaves viejas si existen para no dejar basura
     sessionStorage.removeItem("chatHistoryWriting");
     sessionStorage.removeItem("chatConfigWriting");
     sessionStorage.removeItem("chatEscenarioWriting");
@@ -71,7 +68,6 @@ export default function WritingChatPage() {
     setIsLoaded(true);
   }, []);
 
-  // 2. AUTOGUARDADO UNIFICADO
   useEffect(() => {
     if (isLoaded) {
       if (config) {
@@ -89,7 +85,6 @@ export default function WritingChatPage() {
     }
   }, [config, escenario, historial, gradeResult, isCorrectionEnabled, isLoaded]);
 
-  // Scroll automático hacia abajo en el chat
   useEffect(() => {
     mensajesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [historial, isSending, gradeResult]);
@@ -162,7 +157,7 @@ export default function WritingChatPage() {
         body: JSON.stringify({
           config: config,
           message: textoUsuario,
-          messageHistory: historialLimpio, // <-- Usamos el historial limpio
+          messageHistory: historialLimpio,
           gradeExercise: false
         })
       });
@@ -191,7 +186,6 @@ export default function WritingChatPage() {
     setIsGrading(true);
     setError("");
 
-    // 🔥 TAMBIÉN LIMPIAMOS AQUÍ PARA LA CALIFICACIÓN FINAL
     const historialLimpio = historial.map(msg => ({
       role: msg.role,
       content: msg.content
@@ -209,7 +203,7 @@ export default function WritingChatPage() {
         body: JSON.stringify({
           config: config,
           message: "",
-          messageHistory: historialLimpio, // <-- Usamos el historial limpio
+          messageHistory: historialLimpio,
           gradeExercise: true
         })
       });
@@ -234,7 +228,6 @@ export default function WritingChatPage() {
     }
   };
 
-  // 🔥 ARREGLADO: Ya no borra la memoria de los demás módulos
   const handleReset = () => {
     sessionStorage.removeItem("verboFleteContext");
     sessionStorage.removeItem("verboFlete_writing_state");
@@ -245,80 +238,86 @@ export default function WritingChatPage() {
   };
 
   if (!isLoaded) {
-    return <div className="w-full h-dvh bg-background"></div>;
+    return <div className="w-full min-h-[70vh]"></div>;
   }
 
   if (!config) {
     return (
-      <div className="flex items-center justify-center bg-background p-6">
+      <div className="flex items-center justify-center p-4 md:p-6 font-sans">
         <div className="max-w-3xl w-full">
-          <h1 className="text-4xl font-black text-primary mb-2">✍️ Chat de Rol</h1>
-          <p className="text-text-muted mb-8">Practica tu escritura con escenarios reales.</p>
-          {isGeneratingContext ? (
-            <div className="flex flex-col items-center justify-center py-20">
-              <div className="w-12 h-12 border-4 border-menu-active border-t-transparent rounded-full animate-spin mb-4"></div>
-              <p className="text-primary font-bold animate-pulse">Creando escenario...</p>
-            </div>
-          ) : (
-            <ContextForm onGenerate={handleStartChat} />
-          )}
+          <GlassCard className="p-6 md:p-10">
+            <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2">✍️ Chat de Rol</h1>
+            <p className="text-slate-600 dark:text-slate-300 text-sm md:text-base mb-8">Practica tu escritura con escenarios reales.</p>
+            {isGeneratingContext ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="w-12 h-12 border-4 border-sky-500 dark:border-sky-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-sky-600 dark:text-sky-300 font-bold animate-pulse">Creando escenario...</p>
+              </div>
+            ) : (
+              <ContextForm onGenerate={handleStartChat} />
+            )}
+          </GlassCard>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-dvh flex flex-col bg-background">
-      <header className="bg-surface border-b border-border p-4 shrink-0">
+    <div className="w-full h-[calc(100vh-5rem)] flex flex-col font-sans space-y-4">
+      <header className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 p-4 rounded-2xl shrink-0 shadow-lg">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
-          <button onClick={handleReset} className="text-rose-500 font-bold text-sm hover:underline">
+          <button onClick={handleReset} className="text-rose-600 dark:text-rose-400 font-bold text-sm hover:text-rose-500 dark:hover:text-rose-300 transition-colors cursor-pointer">
             ✕ Terminar Sesión
           </button>
           
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setIsCorrectionEnabled(!isCorrectionEnabled)}
-              className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-colors border ${
-                isCorrectionEnabled ? "bg-amber-100 text-amber-800 border-amber-200" : "bg-gray-100 text-gray-400 border-gray-200"
+              className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-colors border cursor-pointer ${
+                isCorrectionEnabled ? "bg-amber-500/10 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/30" : "bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/10"
               }`}
             >
               💡 Correcciones: {isCorrectionEnabled ? "ON" : "OFF"}
             </button>
 
             <div className="flex gap-2">
-              <span className="bg-background text-[10px] font-bold uppercase px-3 py-1 rounded-full border border-border">{config.mood}</span>
-              <span className="bg-menu-active text-white text-[10px] font-bold uppercase px-3 py-1 rounded-full">{config.tense}</span>
+              <span className="bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 text-[10px] font-bold uppercase px-3 py-1 rounded-full border border-slate-200 dark:border-white/10">{config.mood}</span>
+              <span className="bg-sky-500/10 dark:bg-sky-500/20 border border-sky-500/20 dark:border-sky-400/30 text-sky-700 dark:text-sky-200 text-[10px] font-bold uppercase px-3 py-1 rounded-full">{config.tense}</span>
             </div>
           </div>
         </div>
-        <div className="max-w-5xl mx-auto mt-3 bg-indigo-50 border border-indigo-100 p-3 rounded-xl text-indigo-900 text-xs shadow-sm">
+        <div className="max-w-5xl mx-auto mt-3 bg-sky-500/10 border border-sky-500/20 dark:border-sky-400/20 p-3 rounded-xl text-sky-900 dark:text-sky-200 text-xs backdrop-blur-md">
           <strong>🎬 Escenario:</strong> {escenario}
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-4 sm:p-6 scroll-smooth">
-        <div className="max-w-5xl mx-auto space-y-6">
+      <main className="flex-1 overflow-y-auto p-2 sm:p-4 scroll-smooth space-y-4">
+        <div className="max-w-5xl mx-auto space-y-4">
           {historial.map((msg, idx) => (
             <div key={idx} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
-              <div className={`p-4 max-w-[85%] sm:max-w-[70%] rounded-2xl shadow-sm ${msg.role === "user" ? "bg-primary text-white rounded-br-none" : "bg-white border border-border rounded-bl-none"}`}>
+              <div className={`p-4 max-w-[85%] sm:max-w-[70%] rounded-2xl text-sm leading-relaxed ${
+                msg.role === "user" 
+                  ? "bg-sky-500 text-white rounded-br-none shadow-lg shadow-sky-950/20" 
+                  : "bg-white/90 dark:bg-slate-900/80 border border-slate-200/80 dark:border-white/10 text-slate-900 dark:text-slate-100 rounded-bl-none backdrop-blur-md shadow-md"
+              }`}>
                 {msg.content}
               </div>
               
               {isCorrectionEnabled && msg.role === "assistant" && msg.correcciones?.map((c, i) => (
-                <div key={i} className="mt-2 w-full max-w-[85%] sm:max-w-[70%] bg-amber-50 p-4 rounded-xl border border-amber-200 shadow-sm animate-in fade-in slide-in-from-top-2">
-                  <p className="text-rose-600 line-through text-sm font-medium mb-1">{c.error}</p>
-                  <p className="text-green-700 font-bold text-sm mb-2">✨ {c.correccion}</p>
-                  <p className="text-xs italic text-amber-900/80 bg-amber-100/50 p-2 rounded-lg">{c.explicacion}</p>
+                <div key={i} className="mt-2 w-full max-w-[85%] sm:max-w-[70%] bg-amber-500/10 border border-amber-500/30 p-4 rounded-xl text-amber-900 dark:text-amber-200 text-xs backdrop-blur-md space-y-1">
+                  <p className="text-rose-600 dark:text-rose-400 line-through font-medium">{c.error}</p>
+                  <p className="text-emerald-700 dark:text-emerald-300 font-bold">✨ {c.correccion}</p>
+                  <p className="italic text-amber-900/80 dark:text-amber-200/80 bg-white/40 dark:bg-black/20 p-2 rounded-lg">{c.explicacion}</p>
                 </div>
               ))}
             </div>
           ))}
           {isSending && (
             <div className="flex items-start">
-              <div className="p-4 bg-white border border-border rounded-2xl rounded-bl-none shadow-sm flex gap-2 items-center">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-75"></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-150"></div>
+              <div className="p-4 bg-white/90 dark:bg-slate-900/80 border border-slate-200/80 dark:border-white/10 rounded-2xl rounded-bl-none flex gap-2 items-center">
+                <div className="w-2 h-2 bg-sky-500 dark:bg-sky-400 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-sky-500 dark:bg-sky-400 rounded-full animate-bounce delay-75"></div>
+                <div className="w-2 h-2 bg-sky-500 dark:bg-sky-400 rounded-full animate-bounce delay-150"></div>
               </div>
             </div>
           )}
@@ -326,7 +325,7 @@ export default function WritingChatPage() {
         </div>
       </main>
 
-      <footer className="bg-surface border-t border-border p-4 shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+      <footer className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-md border border-slate-200/80 dark:border-white/10 p-4 rounded-2xl shrink-0">
         <div className="max-w-5xl mx-auto">
           {!gradeResult ? (
             <form onSubmit={handleSendMessage} className="flex flex-col sm:flex-row gap-3">
@@ -334,15 +333,15 @@ export default function WritingChatPage() {
                 value={mensajeActual}
                 onChange={(e) => setMensajeActual(e.target.value)}
                 placeholder="Écris ta réponse ici..."
-                className="flex-1 p-4 rounded-xl border border-border bg-background focus:outline-none focus:border-primary shadow-inner"
+                className="flex-1 p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/40 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-sky-500 dark:focus:border-sky-400 text-sm shadow-sm"
                 disabled={isSending || isGrading}
                 autoFocus
               />
-              <div className="flex gap-2 h-[58px]">
+              <div className="flex gap-2">
                 <button 
                   type="submit" 
                   disabled={!mensajeActual.trim() || isSending || isGrading}
-                  className="bg-primary hover:bg-primary-hover disabled:bg-gray-400 text-white px-8 rounded-xl font-bold transition-colors shadow-md flex-1 sm:flex-none flex items-center justify-center"
+                  className="bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg cursor-pointer text-sm"
                 >
                   Enviar 🚀
                 </button>
@@ -351,7 +350,7 @@ export default function WritingChatPage() {
                     type="button" 
                     onClick={handleGradeExercise} 
                     disabled={isSending || isGrading}
-                    className="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold px-6 border border-emerald-300 rounded-xl transition-colors shadow-sm whitespace-nowrap"
+                    className="bg-emerald-500/10 dark:bg-emerald-500/20 hover:bg-emerald-500/20 dark:hover:bg-emerald-500/30 text-emerald-800 dark:text-emerald-200 border border-emerald-500/30 font-bold px-5 py-3 rounded-xl transition-all text-sm cursor-pointer whitespace-nowrap"
                   >
                     {isGrading ? "Evaluando..." : "✅ Evaluar"}
                   </button>
@@ -360,23 +359,23 @@ export default function WritingChatPage() {
             </form>
           ) : (
             <div className="animate-in fade-in slide-in-from-bottom-4">
-              <div className={`p-6 rounded-2xl text-center shadow-md mb-4 ${gradeResult.score >= 80 ? 'bg-green-50 border border-green-200' : 'bg-amber-50 border border-amber-200'}`}>
-                <h2 className={`text-2xl font-black mb-2 ${gradeResult.score >= 80 ? 'text-green-800' : 'text-amber-800'}`}>
+              <GlassCard className={`p-6 text-center border ${gradeResult.score >= 80 ? 'border-emerald-500/40 dark:border-emerald-400/40 bg-emerald-500/10' : 'border-amber-500/40 dark:border-amber-400/40 bg-amber-500/10'}`}>
+                <h2 className={`text-2xl font-black mb-2 ${gradeResult.score >= 80 ? 'text-emerald-800 dark:text-emerald-300' : 'text-amber-800 dark:text-amber-300'}`}>
                   Calificación Final: {gradeResult.score}/100
                 </h2>
-                <p className="italic text-lg text-gray-700">"{gradeResult.feedback}"</p>
-              </div>
-              <div className="flex justify-center">
+                <p className="italic text-base text-slate-700 dark:text-slate-200">"{gradeResult.feedback}"</p>
+              </GlassCard>
+              <div className="flex justify-center mt-4">
                 <button 
                   onClick={handleReset} 
-                  className="bg-primary hover:bg-primary-hover text-white font-bold px-10 py-3 rounded-xl shadow-md transition-colors"
+                  className="bg-sky-500 hover:bg-sky-400 text-white font-bold px-8 py-3 rounded-xl shadow-lg transition-all text-sm cursor-pointer"
                 >
                   Volver a configurar
                 </button>
               </div>
             </div>
           )}
-          {error && <p className="text-rose-600 font-bold text-center mt-2 text-sm">{error}</p>}
+          {error && <p className="text-rose-500 dark:text-rose-400 font-bold text-center mt-2 text-xs">{error}</p>}
         </div>
       </footer>
     </div>

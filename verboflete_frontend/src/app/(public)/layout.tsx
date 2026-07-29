@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import PublicFooter from "@/components/branding/PublicFooter";
 import PublicNavbar from "@/components/branding/PublicNavbar";
+import { BackgroundLayout } from "@/components/BackgroundLayout";
 
 export default function PublicLayout({
   children,
@@ -18,10 +19,12 @@ export default function PublicLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background text-text-main">
-      <PublicNavbar />
-      <main>{children}</main>
-      <PublicFooter />
-    </div>
+    <BackgroundLayout theme="dark">
+      <div className="flex min-h-screen flex-col">
+        <PublicNavbar />
+        <main className="flex-1">{children}</main>
+        <PublicFooter />
+      </div>
+    </BackgroundLayout>
   );
 }

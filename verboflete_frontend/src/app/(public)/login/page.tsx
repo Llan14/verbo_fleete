@@ -5,7 +5,7 @@ import Link from "next/link";
 import Cookies from "js-cookie";
 import { Inter } from "next/font/google";
 import { clsx } from "clsx";
-import { Eye, EyeOff, Lock, Mail, Moon, Sun } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { loginUser } from "@/services/authService";
 import { normalizeRole, roleHomePath } from "@/lib/rbac";
@@ -21,13 +21,6 @@ type InputProps = ComponentProps<"input"> & {
   icon: LucideIcon;
   label: string;
 };
-
-function applyTheme(theme: ThemeMode) {
-  if (typeof document === "undefined") return;
-  const root = document.documentElement;
-  root.setAttribute("data-theme", theme);
-  root.classList.toggle("dark", theme === "dark");
-}
 
 const InputWithIcon: FC<InputProps> = ({ icon: Icon, label, id, className, ...props }) => {
   const describedBy = props["aria-invalid"] ? `${id}-error` : undefined;
@@ -71,6 +64,7 @@ const LoginPage: FC = () => {
   const [glow, setGlow] = useState<GlowState>({ x: 50, y: 35, active: false });
 
   useEffect(() => {
+    // Leer el tema inicial del DOM
     const current = document.documentElement.getAttribute("data-theme");
     const stored = localStorage.getItem(THEME_KEY);
     const initial = (stored === "light" || stored === "dark"
@@ -80,8 +74,29 @@ const LoginPage: FC = () => {
         : "dark") as ThemeMode;
 
     setTheme(initial);
-    applyTheme(initial);
     setMounted(true);
+
+    // Listener para reaccionar al cambio desde ThemeToggleGlobal
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === THEME_KEY && (e.newValue === "light" || e.newValue === "dark")) {
+        setTheme(e.newValue);
+      }
+    };
+
+    // Observer por si data-theme cambia en <html> directamente
+    const observer = new MutationObserver(() => {
+      const activeAttr = document.documentElement.getAttribute("data-theme") as ThemeMode | null;
+      if (activeAttr && (activeAttr === "light" || activeAttr === "dark")) {
+        setTheme(activeAttr);
+      }
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+
+    window.addEventListener("storage", handleStorageChange);
 
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     const syncMotionPreference = () => setReduceMotion(media.matches);
@@ -89,6 +104,8 @@ const LoginPage: FC = () => {
     media.addEventListener("change", syncMotionPreference);
 
     return () => {
+      observer.disconnect();
+      window.removeEventListener("storage", handleStorageChange);
       media.removeEventListener("change", syncMotionPreference);
     };
   }, []);
@@ -117,13 +134,6 @@ const LoginPage: FC = () => {
       window.removeEventListener("mouseout", handleMouseLeave);
     };
   }, [reduceMotion]);
-
-  const toggleTheme = () => {
-    const nextTheme: ThemeMode = theme === "dark" ? "light" : "dark";
-    setTheme(nextTheme);
-    localStorage.setItem(THEME_KEY, nextTheme);
-    applyTheme(nextTheme);
-  };
 
   const handleCardPointerMove = (event: React.MouseEvent<HTMLElement>) => {
     if (reduceMotion) return;
@@ -241,141 +251,124 @@ const LoginPage: FC = () => {
         </section>
 
         <div className="flex w-full lg:w-1/2 lg:justify-end">
-        <section
-          aria-labelledby="login-title"
-          onMouseMove={handleCardPointerMove}
-          onMouseLeave={handleCardPointerLeave}
-          className={clsx(
-            "relative isolate w-full max-w-md overflow-hidden rounded-3xl border p-7 shadow-2xl backdrop-blur-md sm:p-8",
-            "transition-all duration-700",
-            mounted ? "opacity-100" : "opacity-0",
-            theme === "dark"
-              ? "bg-slate-900/60 text-white border-white/10"
-              : "bg-white/70 text-slate-900 border-slate-200/50",
-          )}
-          style={{
-            transform: reduceMotion
-              ? `translate3d(0, ${mounted ? 0 : 24}px, 0)`
-              : `translate3d(${parallax.x * -10}px, ${(mounted ? 0 : 24) + parallax.y * -8}px, 0)`,
-          }}
-        >
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-300"
+          <section
+            aria-labelledby="login-title"
+            onMouseMove={handleCardPointerMove}
+            onMouseLeave={handleCardPointerLeave}
+            className={clsx(
+              "relative isolate w-full max-w-md overflow-hidden rounded-3xl border p-7 shadow-2xl backdrop-blur-md sm:p-8",
+              "transition-all duration-700",
+              mounted ? "opacity-100" : "opacity-0",
+              theme === "dark"
+                ? "bg-slate-900/60 text-white border-white/10"
+                : "bg-white/70 text-slate-900 border-slate-200/50",
+            )}
             style={{
-              opacity: reduceMotion ? 0 : glow.active ? 1 : 0.45,
-              background:
-                theme === "dark"
-                  ? `radial-gradient(360px circle at ${glow.x}% ${glow.y}%, rgba(125, 211, 252, 0.24), transparent 58%)`
-                  : `radial-gradient(340px circle at ${glow.x}% ${glow.y}%, rgba(14, 165, 233, 0.2), transparent 60%)`,
+              transform: reduceMotion
+                ? `translate3d(0, ${mounted ? 0 : 24}px, 0)`
+                : `translate3d(${parallax.x * -10}px, ${(mounted ? 0 : 24) + parallax.y * -8}px, 0)`,
             }}
-          />
-
-          <div className="relative z-10">
-          <div className="mb-6 flex items-start justify-between gap-4">
-            <header>
-              <h1 id="login-title" className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                MasterHubTraining
-              </h1>
-              <p className={clsx("mt-1 text-sm", theme === "dark" ? "text-slate-300" : "text-slate-600")}>
-                Acceso a la Plataforma Académica
-              </p>
-            </header>
-
-            <button
-              type="button"
-              onClick={toggleTheme}
-              role="switch"
-              aria-checked={theme === "dark"}
-              aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
-              className={clsx(
-                "inline-flex h-10 w-10 items-center justify-center rounded-full border transition",
-                "focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60",
-                theme === "dark"
-                  ? "border-white/15 bg-slate-800/70 text-yellow-300 hover:bg-slate-700/70"
-                  : "border-slate-300/70 bg-white/70 text-slate-700 hover:bg-white",
-              )}
-            >
-              {theme === "dark" ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
-            </button>
-          </div>
-
-          <form className="space-y-4" onSubmit={handleLogin} noValidate>
-            <InputWithIcon
-              id="email"
-              name="email"
-              label="Correo institucional"
-              type="email"
-              icon={Mail}
-              placeholder="tu.correo@institucion.com"
-              autoComplete="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
-              disabled={isLoading}
-              aria-invalid={Boolean(error) && !email}
+          >
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-300"
+              style={{
+                opacity: reduceMotion ? 0 : glow.active ? 1 : 0.45,
+                background:
+                  theme === "dark"
+                    ? `radial-gradient(360px circle at ${glow.x}% ${glow.y}%, rgba(125, 211, 252, 0.24), transparent 58%)`
+                    : `radial-gradient(340px circle at ${glow.x}% ${glow.y}%, rgba(14, 165, 233, 0.2), transparent 60%)`,
+              }}
             />
 
-            <div className="relative">
-              <InputWithIcon
-                id="password"
-                name="password"
-                label="Contraseña"
-                type={isPasswordVisible ? "text" : "password"}
-                icon={Lock}
-                placeholder="Ingresa tu contraseña"
-                autoComplete="current-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-                disabled={isLoading}
-                className="pr-12"
-                aria-invalid={Boolean(error) && !password}
-              />
-              <button
-                type="button"
-                onClick={() => setIsPasswordVisible((prev) => !prev)}
-                className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-500 transition hover:text-slate-800 dark:text-slate-300 dark:hover:text-white"
-                aria-label={isPasswordVisible ? "Ocultar contraseña" : "Mostrar contraseña"}
-                disabled={isLoading}
-              >
-                {isPasswordVisible ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
-              </button>
-            </div>
+            <div className="relative z-10">
+              <div className="mb-6">
+                <header>
+                  <h1 id="login-title" className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                    MasterHubTraining
+                  </h1>
+                  <p className={clsx("mt-1 text-sm", theme === "dark" ? "text-slate-300" : "text-slate-600")}>
+                    Acceso a la Plataforma Académica
+                  </p>
+                </header>
+              </div>
 
-            {error && (
-              <p id="password-error" role="alert" className="text-sm font-medium text-rose-300 dark:text-rose-300">
-                {error}
-              </p>
-            )}
+              <form className="space-y-4" onSubmit={handleLogin} noValidate>
+                <InputWithIcon
+                  id="email"
+                  name="email"
+                  label="Correo institucional"
+                  type="email"
+                  icon={Mail}
+                  placeholder="tu.correo@institucion.com"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                  disabled={isLoading}
+                  aria-invalid={Boolean(error) && !email}
+                />
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className={clsx(
-                "mt-2 w-full rounded-xl px-5 py-3 text-sm font-semibold text-white",
-                "bg-sky-500 shadow-lg shadow-sky-900/25 transition",
-                "hover:bg-sky-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70",
-                "disabled:cursor-not-allowed disabled:opacity-70",
-              )}
-            >
-              {isLoading ? "Ingresando..." : "Ingresar"}
-            </button>
+                <div className="relative">
+                  <InputWithIcon
+                    id="password"
+                    name="password"
+                    label="Contraseña"
+                    type={isPasswordVisible ? "text" : "password"}
+                    icon={Lock}
+                    placeholder="Ingresa tu contraseña"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                    disabled={isLoading}
+                    className="pr-12"
+                    aria-invalid={Boolean(error) && !password}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsPasswordVisible((prev) => !prev)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-500 transition hover:text-slate-800 dark:text-slate-300 dark:hover:text-white"
+                    aria-label={isPasswordVisible ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    disabled={isLoading}
+                  >
+                    {isPasswordVisible ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+                  </button>
+                </div>
 
-            <div className="pt-1 text-center">
-              <Link
-                href="/recuperar-acceso"
-                className={clsx(
-                  "text-sm font-medium underline-offset-4 transition hover:underline",
-                  theme === "dark" ? "text-slate-200 hover:text-white" : "text-slate-700 hover:text-slate-900",
+                {error && (
+                  <p id="password-error" role="alert" className="text-sm font-medium text-rose-300 dark:text-rose-300">
+                    {error}
+                  </p>
                 )}
-              >
-                Olvide mi contrasena
-              </Link>
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className={clsx(
+                    "mt-2 w-full rounded-xl px-5 py-3 text-sm font-semibold text-white",
+                    "bg-sky-500 shadow-lg shadow-sky-900/25 transition",
+                    "hover:bg-sky-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/70",
+                    "disabled:cursor-not-allowed disabled:opacity-70",
+                  )}
+                >
+                  {isLoading ? "Ingresando..." : "Ingresar"}
+                </button>
+
+                <div className="pt-1 text-center">
+                  <Link
+                    href="/recuperar-acceso"
+                    className={clsx(
+                      "text-sm font-medium underline-offset-4 transition hover:underline",
+                      theme === "dark" ? "text-slate-200 hover:text-white" : "text-slate-700 hover:text-slate-900",
+                    )}
+                  >
+                    Olvide mi contraseña
+                  </Link>
+                </div>
+              </form>
             </div>
-          </form>
-          </div>
-        </section>
+          </section>
         </div>
       </main>
     </div>

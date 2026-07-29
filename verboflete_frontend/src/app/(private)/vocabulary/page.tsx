@@ -2,6 +2,7 @@
 
 import { getClientToken } from "@/lib/authToken";
 import { useEffect, useMemo, useState } from "react";
+import { GlassCard } from "@/components/GlassCard";
 
 type GeneratedItem = {
   termino: string;
@@ -100,7 +101,7 @@ export default function VocabularyPage() {
   const loadStats = async () => {
     try {
       const res = await fetch(`${API_URL}/vocabulary/stats`, { headers: authHeaders() });
-      if (!res.ok) throw new Error("No se pudo cargar metricas");
+      if (!res.ok) throw new Error("No se pudo cargar métricas");
       const data: VocabularyStats = await res.json();
       setStats(data);
     } catch {
@@ -174,47 +175,47 @@ export default function VocabularyPage() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="mx-auto max-w-6xl space-y-6 font-sans animate-in fade-in duration-500">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-white/10 pb-4">
         <div>
-          <h1 className="text-3xl font-black text-primary">Vocabulario + Repaso Adaptativo</h1>
-          <p className="text-sm text-text-muted">Genera palabras por contexto y repasa con SRS (SM-2).</p>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Vocabulario + Repaso Adaptativo</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">Genera palabras por contexto y repasa con SRS (SM-2).</p>
         </div>
-        <span className="rounded-full border border-border bg-surface px-4 py-2 text-sm font-bold text-primary">
+        <span className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-slate-900/60 backdrop-blur-md px-4 py-2 text-sm font-bold text-sky-700 dark:text-sky-300 shadow-sm">
           Pendientes hoy: {pendientes}
         </span>
       </div>
 
       {stats && (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-border bg-surface p-4">
-            <p className="text-[11px] uppercase font-black text-text-muted">Total palabras</p>
-            <p className="text-2xl font-black text-primary">{stats.total_palabras}</p>
-          </div>
-          <div className="rounded-2xl border border-border bg-surface p-4">
-            <p className="text-[11px] uppercase font-black text-text-muted">Pendientes</p>
-            <p className="text-2xl font-black text-primary">{stats.pendientes_hoy}</p>
-          </div>
-          <div className="rounded-2xl border border-border bg-surface p-4">
-            <p className="text-[11px] uppercase font-black text-text-muted">Tasa acierto</p>
-            <p className="text-2xl font-black text-primary">{stats.tasa_acierto}%</p>
-          </div>
-          <div className="rounded-2xl border border-border bg-surface p-4">
-            <p className="text-[11px] uppercase font-black text-text-muted">Nivel dominante</p>
-            <p className="text-2xl font-black text-primary">{stats.nivel_top}</p>
-          </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <GlassCard className="p-4">
+            <p className="text-[11px] uppercase font-black text-slate-500 dark:text-slate-400">Total palabras</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{stats.total_palabras}</p>
+          </GlassCard>
+          <GlassCard className="p-4">
+            <p className="text-[11px] uppercase font-black text-slate-500 dark:text-slate-400">Pendientes</p>
+            <p className="text-2xl font-black text-sky-600 dark:text-sky-300 mt-1">{stats.pendientes_hoy}</p>
+          </GlassCard>
+          <GlassCard className="p-4">
+            <p className="text-[11px] uppercase font-black text-slate-500 dark:text-slate-400">Tasa acierto</p>
+            <p className="text-2xl font-black text-emerald-600 dark:text-emerald-300 mt-1">{stats.tasa_acierto}%</p>
+          </GlassCard>
+          <GlassCard className="p-4">
+            <p className="text-[11px] uppercase font-black text-slate-500 dark:text-slate-400">Nivel dominante</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{stats.nivel_top}</p>
+          </GlassCard>
         </div>
       )}
 
-      {error && <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
+      {error && <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 dark:bg-rose-500/20 p-4 text-sm text-rose-800 dark:text-rose-200 backdrop-blur-md">{error}</div>}
 
-      <section className="rounded-3xl border border-border bg-surface p-6 shadow-sm space-y-4">
-        <h2 className="text-xl font-black text-primary">Generador de vocabulario</h2>
+      <GlassCard className="p-6 space-y-4">
+        <h2 className="text-xl font-black text-slate-900 dark:text-white">Generador de vocabulario</h2>
         <div className="grid gap-3 md:grid-cols-4">
           <select
             value={nivel}
             onChange={(e) => setNivel(e.target.value)}
-            className="rounded-xl border border-border bg-background px-3 py-2"
+            className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/40 text-slate-900 dark:text-white px-3 py-2.5 outline-none focus:border-sky-500 dark:focus:border-sky-400 text-sm cursor-pointer shadow-sm"
           >
             <option value="A1">A1</option>
             <option value="B1">B1</option>
@@ -223,7 +224,7 @@ export default function VocabularyPage() {
           <input
             value={contexto}
             onChange={(e) => setContexto(e.target.value)}
-            className="rounded-xl border border-border bg-background px-3 py-2 md:col-span-2"
+            className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/40 text-slate-900 dark:text-white px-3 py-2.5 outline-none focus:border-sky-500 dark:focus:border-sky-400 text-sm md:col-span-2 placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-sm"
             placeholder="Contexto (ej. trabajo, viajes, escuela)"
           />
           <input
@@ -232,27 +233,27 @@ export default function VocabularyPage() {
             max={20}
             value={cantidad}
             onChange={(e) => setCantidad(Number(e.target.value))}
-            className="rounded-xl border border-border bg-background px-3 py-2"
+            className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/40 text-slate-900 dark:text-white px-3 py-2.5 outline-none focus:border-sky-500 dark:focus:border-sky-400 text-sm shadow-sm"
           />
         </div>
         <button
           onClick={generateWords}
           disabled={loadingGenerate}
-          className="rounded-xl bg-primary px-5 py-2 text-sm font-bold text-white hover:bg-primary-hover disabled:opacity-60"
+          className="rounded-xl bg-sky-500 px-6 py-2.5 text-sm font-bold text-white hover:bg-sky-400 disabled:opacity-50 cursor-pointer shadow-lg shadow-sky-950/20"
         >
           {loadingGenerate ? "Generando..." : "Generar palabras"}
         </button>
 
         {generated.length > 0 && (
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 pt-2">
             {generated.map((word, idx) => (
-              <div key={`${word.termino}-${idx}`} className="rounded-2xl border border-border bg-background p-4">
-                <p className="text-lg font-black text-primary">{word.termino}</p>
-                <p className="text-sm text-text-main">{word.traduccion}</p>
-                <p className="mt-2 text-xs italic text-text-muted">{word.ejemplo}</p>
+              <div key={`${word.termino}-${idx}`} className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-950/40 p-4">
+                <p className="text-lg font-black text-slate-900 dark:text-white">{word.termino}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-300">{word.traduccion}</p>
+                <p className="mt-2 text-xs italic text-slate-500 dark:text-slate-400">{word.ejemplo}</p>
                 <button
                   onClick={() => saveWord(word)}
-                  className="mt-3 rounded-lg border border-primary px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/10"
+                  className="mt-3 rounded-xl border border-sky-500/20 dark:border-sky-400/30 bg-sky-500/10 dark:bg-sky-500/20 px-3.5 py-1.5 text-xs font-bold text-sky-800 dark:text-sky-200 hover:bg-sky-500/20 dark:hover:bg-sky-500/30 cursor-pointer"
                 >
                   Guardar en mi lista
                 </button>
@@ -260,40 +261,40 @@ export default function VocabularyPage() {
             ))}
           </div>
         )}
-      </section>
+      </GlassCard>
 
-      <section className="rounded-3xl border border-border bg-surface p-6 shadow-sm space-y-4">
-        <h2 className="text-xl font-black text-primary">Repaso de hoy (SRS)</h2>
+      <GlassCard className="p-6 space-y-4">
+        <h2 className="text-xl font-black text-slate-900 dark:text-white">Repaso de hoy (SRS)</h2>
         {loadingDue ? (
-          <p className="text-sm text-text-muted">Cargando repaso...</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Cargando repaso...</p>
         ) : dueWords.length === 0 ? (
-          <p className="text-sm text-text-muted">No tienes tarjetas pendientes ahora.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">No tienes tarjetas pendientes ahora.</p>
         ) : (
           <div className="space-y-3">
             {dueWords.map((item) => (
-              <div key={item.id} className="rounded-2xl border border-border bg-background p-4">
-                <p className="text-lg font-black text-primary">{item.termino}</p>
-                <p className="text-sm text-text-main">{item.traduccion}</p>
-                {item.ejemplo && <p className="mt-1 text-xs italic text-text-muted">{item.ejemplo}</p>}
+              <div key={item.id} className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-950/40 p-4">
+                <p className="text-lg font-black text-slate-900 dark:text-white">{item.termino}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-300">{item.traduccion}</p>
+                {item.ejemplo && <p className="mt-1 text-xs italic text-slate-500 dark:text-slate-400">{item.ejemplo}</p>}
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button onClick={() => reviewWord(item.id, 2)} className="rounded-lg border border-rose-300 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700">Fallo</button>
-                  <button onClick={() => reviewWord(item.id, 3)} className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700">Dudoso</button>
-                  <button onClick={() => reviewWord(item.id, 5)} className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">Perfecto</button>
+                  <button onClick={() => reviewWord(item.id, 2)} className="rounded-xl border border-rose-500/30 bg-rose-500/10 dark:bg-rose-500/20 px-3.5 py-1.5 text-xs font-bold text-rose-800 dark:text-rose-200 hover:bg-rose-500/20 dark:hover:bg-rose-500/30 cursor-pointer">Fallo</button>
+                  <button onClick={() => reviewWord(item.id, 3)} className="rounded-xl border border-amber-500/30 bg-amber-500/10 dark:bg-amber-500/20 px-3.5 py-1.5 text-xs font-bold text-amber-800 dark:text-amber-200 hover:bg-amber-500/20 dark:hover:bg-amber-500/30 cursor-pointer">Dudoso</button>
+                  <button onClick={() => reviewWord(item.id, 5)} className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-500/20 px-3.5 py-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/20 dark:hover:bg-emerald-500/30 cursor-pointer">Perfecto</button>
                 </div>
               </div>
             ))}
           </div>
         )}
-      </section>
+      </GlassCard>
 
-      <section className="rounded-3xl border border-border bg-surface p-6 shadow-sm">
+      <GlassCard className="p-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-xl font-black text-primary">Mi banco de palabras</h2>
+          <h2 className="text-xl font-black text-slate-900 dark:text-white">Mi banco de palabras</h2>
           <div className="flex flex-wrap gap-2">
             <select
               value={filtroNivel}
               onChange={(e) => setFiltroNivel(e.target.value)}
-              className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
+              className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white px-3 py-1.5 text-xs cursor-pointer outline-none shadow-sm"
             >
               <option value="todos">Todos</option>
               <option value="A1">A1</option>
@@ -304,41 +305,41 @@ export default function VocabularyPage() {
               value={filtroContexto}
               onChange={(e) => setFiltroContexto(e.target.value)}
               placeholder="Filtrar contexto"
-              className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
+              className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/40 text-slate-900 dark:text-white px-3 py-1.5 text-xs placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm"
             />
             <input
               value={filtroTexto}
               onChange={(e) => setFiltroTexto(e.target.value)}
-              placeholder="Buscar termino"
-              className="rounded-lg border border-border bg-background px-2 py-1.5 text-sm"
+              placeholder="Buscar término"
+              className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/40 text-slate-900 dark:text-white px-3 py-1.5 text-xs placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none shadow-sm"
             />
           </div>
         </div>
         {loadingList ? (
-          <p className="text-sm text-text-muted">Cargando palabras...</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Cargando palabras...</p>
         ) : myWords.length === 0 ? (
-          <p className="text-sm text-text-muted">Todavia no has guardado palabras.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Todavía no has guardado palabras.</p>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-border">
-            <div className="grid grid-cols-[1.2fr_1fr_0.8fr_1fr] bg-background px-4 py-3 text-xs font-black uppercase tracking-wide text-text-muted">
-              <span>Termino</span>
-              <span>Traduccion</span>
+          <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-white/10">
+            <div className="grid grid-cols-[1.2fr_1fr_0.8fr_1fr] bg-slate-100 dark:bg-slate-950/60 px-4 py-3 text-xs font-black uppercase tracking-wide text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-white/10">
+              <span>Término</span>
+              <span>Traducción</span>
               <span>Intervalo</span>
-              <span>Proximo repaso</span>
+              <span>Próximo repaso</span>
             </div>
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-slate-200 dark:divide-white/5 bg-white/50 dark:bg-transparent">
               {myWords.map((item) => (
-                <div key={item.id} className="grid grid-cols-[1.2fr_1fr_0.8fr_1fr] px-4 py-3 text-sm text-text-main">
-                  <span className="font-semibold text-primary">{item.termino}</span>
+                <div key={item.id} className="grid grid-cols-[1.2fr_1fr_0.8fr_1fr] px-4 py-3 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100/80 dark:hover:bg-white/5 transition-colors">
+                  <span className="font-semibold text-slate-900 dark:text-white">{item.termino}</span>
                   <span>{item.traduccion}</span>
-                  <span>{item.intervalo_dias} dias</span>
+                  <span>{item.intervalo_dias} días</span>
                   <span>{new Date(item.proximo_repaso).toLocaleDateString("es-ES")}</span>
                 </div>
               ))}
             </div>
           </div>
         )}
-      </section>
+      </GlassCard>
     </div>
   );
 }

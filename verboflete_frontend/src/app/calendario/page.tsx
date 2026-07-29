@@ -1,13 +1,13 @@
 "use client";
 
 import { getClientToken } from "@/lib/authToken";
-
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import CalendarGrid from "../../components/calendario/CalendarGrid";
 import CalendarHeader from "../../components/calendario/CalendarHeader";
 import type { CalendarTask } from "../../components/calendario/types";
 import TareaModal from "../../components/TareaModal";
+import { GlassCard } from "@/components/GlassCard";
 
 const diasSemana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
@@ -135,17 +135,17 @@ export default function CalendarioPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[70vh] flex-col items-center justify-center gap-3 text-slate-600">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-teal-500 border-t-transparent" />
-        <p className="font-medium">Cargando calendario...</p>
+      <div className="flex min-h-[70vh] flex-col items-center justify-center gap-3 text-slate-600 dark:text-slate-300">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-sky-500 dark:border-sky-400 border-t-transparent" />
+        <p className="font-medium text-sm">Cargando calendario...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="mx-auto max-w-lg p-6">
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-center text-rose-700">
+      <div className="mx-auto max-w-lg p-6 font-sans">
+        <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 dark:bg-rose-500/20 p-4 text-center text-rose-800 dark:text-rose-200 backdrop-blur-md">
           {error}
         </div>
       </div>
@@ -153,11 +153,11 @@ export default function CalendarioPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl p-4 md:p-8">
-      <div className="mb-4 flex items-center justify-start">
+    <div className="mx-auto max-w-7xl font-sans animate-in fade-in duration-500 space-y-6">
+      <div className="flex items-center justify-start">
         <button
           onClick={volverEnApp}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          className="rounded-xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/10 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-white/20 hover:text-slate-900 dark:hover:text-white backdrop-blur-md cursor-pointer shadow-sm"
         >
           ← Volver
         </button>
@@ -169,10 +169,10 @@ export default function CalendarioPage() {
         onNextMonth={() => cambiarMes(1)}
       />
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
+      <GlassCard className="p-0 overflow-hidden">
+        <div className="grid grid-cols-7 border-b border-slate-200 dark:border-white/10 bg-slate-100/80 dark:bg-slate-950/60">
           {diasSemana.map((dia) => (
-            <div key={dia} className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-500">
+            <div key={dia} className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-400">
               {dia}
             </div>
           ))}
@@ -183,12 +183,12 @@ export default function CalendarioPage() {
           tasksByDay={tareasAgrupadas}
           onSelectTask={setTareaSeleccionada}
         />
-      </div>
+      </GlassCard>
 
       {tareas.length === 0 && !loading && (
-        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 text-center text-sm text-slate-600">
-          No tienes tareas programadas en este calendario por el momento.
-        </div>
+        <GlassCard className="p-4 text-center">
+          <p className="text-sm text-slate-500 dark:text-slate-400">No tienes tareas programadas en este calendario por el momento.</p>
+        </GlassCard>
       )}
 
       {tareaSeleccionada && (

@@ -67,10 +67,10 @@ export default function ContextForm({ onGenerate, isLoading }: ContextFormProps)
   const savedContextDisplay = `${topic} • ${level} • ${verbGroup} • ${mood} (${tense})`;
 
   return (
-    <div className="mt-4 mb-6">
+    <div className="mt-2 mb-4 font-sans">
       {!isContextSet ? (
-        <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-top-2 duration-300 bg-white p-5 rounded-xl border border-border shadow-sm">
-          <label className="text-lg font-bold text-primary">
+        <div className="flex flex-col gap-4 animate-in fade-in duration-300">
+          <label className="text-lg font-bold text-slate-900 dark:text-white">
             ¿Qué quieres practicar hoy?
           </label>
           
@@ -78,7 +78,7 @@ export default function ContextForm({ onGenerate, isLoading }: ContextFormProps)
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             placeholder="Ej: Viajes, Entrevista de trabajo, Un día en París..."
-            className="border-2 border-border rounded-lg px-4 py-3 text-lg w-full outline-none focus:border-menu-active transition-colors"
+            className="border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-slate-950/40 rounded-xl px-4 py-3 text-slate-900 dark:text-white text-base w-full outline-none focus:border-sky-500 dark:focus:border-sky-400 transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-sm"
             onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
             disabled={isLoading}
             autoFocus
@@ -88,7 +88,7 @@ export default function ContextForm({ onGenerate, isLoading }: ContextFormProps)
             <select
               value={level}
               onChange={(e) => setLevel(e.target.value)}
-              className="border-2 border-border rounded-lg px-4 py-2 outline-none focus:border-menu-active bg-white cursor-pointer"
+              className="border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl px-4 py-2.5 outline-none focus:border-sky-500 dark:focus:border-sky-400 cursor-pointer text-sm shadow-sm"
               disabled={isLoading}
             >
               <option value="A1">Nivel A1</option>
@@ -101,7 +101,7 @@ export default function ContextForm({ onGenerate, isLoading }: ContextFormProps)
             <select
               value={verbGroup}
               onChange={(e) => setVerbGroup(e.target.value)}
-              className="border-2 border-border rounded-lg px-4 py-2 outline-none focus:border-menu-active bg-white cursor-pointer"
+              className="border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl px-4 py-2.5 outline-none focus:border-sky-500 dark:focus:border-sky-400 cursor-pointer text-sm shadow-sm"
               disabled={isLoading}
             >
               <option value="1er (Terminados en -er)">1er Grupo (-er)</option>
@@ -114,7 +114,7 @@ export default function ContextForm({ onGenerate, isLoading }: ContextFormProps)
             <select
               value={mood}
               onChange={(e) => setMood(e.target.value)}
-              className="border-2 border-border rounded-lg px-4 py-2 outline-none focus:border-menu-active bg-white cursor-pointer font-medium text-primary"
+              className="border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl px-4 py-2.5 outline-none focus:border-sky-500 dark:focus:border-sky-400 cursor-pointer text-sm font-medium shadow-sm"
               disabled={isLoading}
             >
               <option value="indicatif">Indicatif</option>
@@ -126,7 +126,7 @@ export default function ContextForm({ onGenerate, isLoading }: ContextFormProps)
             <select
               value={tense}
               onChange={(e) => setTense(e.target.value)}
-              className="border-2 border-border rounded-lg px-4 py-2 outline-none focus:border-menu-active bg-white cursor-pointer font-medium text-primary"
+              className="border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl px-4 py-2.5 outline-none focus:border-sky-500 dark:focus:border-sky-400 cursor-pointer text-sm font-medium shadow-sm"
               disabled={isLoading}
             >
               <option value="présent">Présent</option>
@@ -138,26 +138,26 @@ export default function ContextForm({ onGenerate, isLoading }: ContextFormProps)
             </select>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between mt-2 pt-4 border-t border-border/50 gap-4">
-            <p className="text-sm text-text-muted">
+          <div className="flex flex-col sm:flex-row items-center justify-between mt-2 pt-4 border-t border-slate-200 dark:border-white/10 gap-4">
+            <p className="text-xs text-slate-600 dark:text-slate-300">
               Define el tema, tu nivel, los verbos y el tiempo gramatical para la IA.
             </p>
             <button
               onClick={handleGenerate}
               disabled={topic.trim() === "" || isLoading}
-              className="w-full sm:w-auto bg-primary hover:bg-primary-hover disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-lg transition-all shadow-md"
+              className="w-full sm:w-auto bg-sky-500 hover:bg-sky-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-sky-950/20 cursor-pointer"
             >
               {isLoading ? "Generando..." : "Generar Ejercicio"}
             </button>
           </div>
         </div>
       ) : (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-surface p-5 rounded-xl border-l-4 border-l-menu-active border-y border-r border-border shadow-sm animate-in fade-in zoom-in-95 duration-200 gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-sky-50/50 dark:bg-slate-950/40 border-l-4 border-l-sky-500 dark:border-l-sky-400 border border-slate-200/80 dark:border-white/10 p-5 rounded-2xl backdrop-blur-md shadow-md animate-in fade-in duration-200 gap-4">
           <div>
-            <span className="text-xs text-text-muted font-bold uppercase tracking-wider block mb-1">
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider block mb-1">
               {isLoading ? "Generando ejercicio..." : "Contexto Actual"}
             </span>
-            <p className={`text-lg font-bold text-primary ${isLoading ? 'animate-pulse' : ''}`}>
+            <p className={`text-base md:text-lg font-bold text-slate-900 dark:text-white ${isLoading ? 'animate-pulse' : ''}`}>
               {savedContextDisplay}
             </p>
           </div>
@@ -166,7 +166,7 @@ export default function ContextForm({ onGenerate, isLoading }: ContextFormProps)
             <button
               onClick={handleChange}
               disabled={isLoading}
-              className="text-sm text-primary underline hover:text-menu-active hover:bg-gray-50 px-4 py-2 rounded transition-all whitespace-nowrap font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-sm text-sky-700 dark:text-sky-300 underline hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/10 px-4 py-2 rounded-xl transition-all whitespace-nowrap font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               Cambiar configuración
             </button>
@@ -174,7 +174,7 @@ export default function ContextForm({ onGenerate, isLoading }: ContextFormProps)
             <button
               onClick={handleGenerate}
               disabled={isLoading}
-              className="w-full sm:w-auto bg-primary hover:bg-primary-hover disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm font-bold py-2 px-6 rounded-lg transition-all shadow-md whitespace-nowrap"
+              className="w-full sm:w-auto bg-sky-500 hover:bg-sky-400 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold py-2.5 px-6 rounded-xl transition-all shadow-lg shadow-sky-950/20 whitespace-nowrap cursor-pointer"
             >
               {isLoading ? "Generando..." : "Generar Ejercicio"}
             </button>

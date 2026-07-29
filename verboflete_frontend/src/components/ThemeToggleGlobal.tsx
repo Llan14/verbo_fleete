@@ -1,59 +1,83 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { Sun, Moon } from "lucide-react";
+import { clsx } from "clsx";
 
 const THEME_KEY = "verboflete-theme";
-
 type ThemeMode = "light" | "dark";
 
-function getPreferredTheme(): ThemeMode {
-  const stored = window.localStorage.getItem(THEME_KEY);
-  if (stored === "light" || stored === "dark") {
-    return stored;
-  }
-
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-}
-
-function applyTheme(theme: ThemeMode) {
-  document.documentElement.setAttribute("data-theme", theme);
-  document.documentElement.classList.toggle("dark", theme === "dark");
-  window.localStorage.setItem(THEME_KEY, theme);
-}
-
 export default function ThemeToggleGlobal() {
-  const pathname = usePathname();
-  const [theme, setTheme] = useState<ThemeMode>("light");
-
-  const cleanPath = pathname.endsWith("/") && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
-  const hideOnAuthScreens = cleanPath === "/login" || cleanPath === "/recuperar-acceso";
+  const [theme, setTheme] = useState<ThemeMode>("dark");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const current = document.documentElement.getAttribute("data-theme");
-    const resolved = current === "dark" || current === "light" ? current : getPreferredTheme();
-    setTheme(resolved);
-    applyTheme(resolved);
+    // Lee el tema ya aplicado en <html> por ThemeInitializer
+    const root = document.documentElement;
+    const currentAttr = root.getAttribute("data-theme") as ThemeMode | null;
+    const isDarkClass = root.classList.contains("dark");
+
+    const activeTheme: ThemeMode =
+      currentAttr || (isDarkClass ? "dark" : "light");
+
+    setTheme(activeTheme);
+    setMounted(true);
   }, []);
 
-  const onToggle = () => {
+  const toggleTheme = () => {
     const nextTheme: ThemeMode = theme === "dark" ? "light" : "dark";
+
+    // 1. Actualizar estado local
     setTheme(nextTheme);
-    applyTheme(nextTheme);
+
+    // 2. Persistir en localStorage
+    localStorage.setItem(THEME_KEY, nextTheme);
+
+    // 3. Aplicar al DOM
+    const root = document.documentElement;
+    root.setAttribute("data-theme", nextTheme);
+    root.classList.toggle("dark", nextTheme === "dark");
+
+    // 4. Disparar evento de storage para sincronizar otros componentes/pestañas
+    window.dispatchEvent(
+      new StorageEvent("storage", {
+        key: THEME_KEY,
+        newValue: nextTheme,
+      })
+    );
   };
 
-  if (hideOnAuthScreens) {
-    return null;
-  }
+  if (!mounted) return null;
 
   return (
     <button
-      onClick={onToggle}
-      className="fixed bottom-5 right-5 z-[80] rounded-full border border-border bg-surface px-4 py-2 text-xs font-black text-primary shadow-lg transition hover:scale-105 hover:bg-primary/10"
-      aria-label="Cambiar modo global"
-      title="Cambiar modo"
+      type="button"
+      onClick={toggleTheme}
+      role="switch"
+      aria-checked={theme === "dark"}
+      aria-label={
+        theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"
+      }
+      className={clsx(
+        "fixed bottom-6 right-6 z-[9999] flex h-12 w-12 items-center justify-center rounded-2xl border transition-all duration-300 shadow-2xl backdrop-blur-xl cursor-pointer active:scale-95",
+        theme === "dark"
+          ? "border-white/20 bg-slate-900/80 text-yellow-300 hover:bg-slate-800 hover:border-yellow-400/40 shadow-slate-950/60"
+          : "border-slate-300/80 bg-white/80 text-slate-800 hover:bg-white hover:border-sky-400/50 shadow-slate-900/20"
+      )}
     >
-      {theme === "dark" ? "☀ Modo Claro" : "🌙 Modo Oscuro"}
+      {theme === "dark" ? (
+        <Sun
+          size={20}
+          className="transition-transform duration-300 hover:rotate-45"
+          aria-hidden="true"
+        />
+      ) : (
+        <Moon
+          size={20}
+          className="transition-transform duration-300 hover:-rotate-12"
+          aria-hidden="true"
+        />
+      )}
     </button>
   );
 }

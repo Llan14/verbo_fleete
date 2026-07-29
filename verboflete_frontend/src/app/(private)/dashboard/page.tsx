@@ -4,6 +4,7 @@ import { getClientToken } from "@/lib/authToken";
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link"; 
 import ModuleFooterDecoration from "@/components/branding/ModuleFooterDecoration";
+import { GlassCard } from "@/components/GlassCard";
 import {
   Bar,
   BarChart,
@@ -60,7 +61,6 @@ interface SesionResumen {
   puntaje_total: number;
 }
 
-// === Custom Hook de Data Fetching ===
 function useDashboardData() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [historial, setHistorial] = useState<SesionResumen[]>([]);
@@ -112,7 +112,6 @@ function useDashboardData() {
   return { data, historial, gamification, loading, error };
 }
 
-// === Componente Principal ===
 export default function DashboardPage() {
   const { data, historial, gamification, loading, error } = useDashboardData();
   const [mostrarTodos, setMostrarTodos] = useState(false);
@@ -143,8 +142,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Memorizamos el cálculo de la porción del historial a mostrar para evitar
-  // renderizados innecesarios cuando otros estados cambian.
   const displayedHistorial = useMemo(() => {
     return mostrarTodos ? historial : historial.slice(0, 4);
   }, [historial, mostrarTodos]);
@@ -170,17 +167,17 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-text-muted">
-        <div className="w-12 h-12 border-4 border-menu-active border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="font-medium">Calculando tu maestría...</p>
+      <div className="min-h-[70vh] flex flex-col items-center justify-center text-slate-300">
+        <div className="w-12 h-12 border-4 border-sky-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="font-medium text-sm">Calculando tu maestría...</p>
       </div>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="min-h-screen p-8">
-        <div className="bg-red-50 text-red-700 p-4 rounded-xl border border-red-200">
+      <div className="p-8">
+        <div className="bg-rose-500/20 text-rose-200 p-4 rounded-2xl border border-rose-500/30 backdrop-blur-md">
           {error || "No hay datos disponibles."}
         </div>
       </div>
@@ -190,104 +187,118 @@ export default function DashboardPage() {
   const { totalExercises, weakestTense, stats, report } = data;
 
   return (
-    <div className=" mx-auto font-sans animate-in fade-in slide-in-from-top-4 duration-700">
+    <div className="mx-auto font-sans animate-in fade-in slide-in-from-top-4 duration-700 space-y-8">
       
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-border pb-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-black text-primary tracking-tight text-balance">
+      {/* Encabezado Principal */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/10 pb-6">
+        <div>
+          <h1 className="text-3xl font-black text-white tracking-tight">
             Mi Progreso
           </h1>
+          <p className="text-slate-300 text-sm mt-1">
+            Revisa las métricas y la evolución de tu aprendizaje.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
           <Link
             href="/calendario"
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            className="rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/20 hover:text-white backdrop-blur-md"
           >
             ← Volver al calendario
           </Link>
           <button
             onClick={descargarReportePdf}
-            className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-700 transition hover:bg-teal-100"
+            className="rounded-xl border border-sky-400/30 bg-sky-500/20 px-4 py-2 text-sm font-semibold text-sky-200 transition hover:bg-sky-500/30 hover:text-white backdrop-blur-md"
           >
             Descargar PDF
           </button>
+          
+          <StatBadge
+            label="Total Ejercicios"
+            value={totalExercises.toString()}
+            icon="📝"
+          />
         </div>
-        <StatBadge
-          label="Total Ejercicios"
-          value={totalExercises.toString()}
-          icon="📝"
-        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
+        {/* Columna Izquierda (2/3): Gráficas y Métricas */}
         <div className="lg:col-span-2 space-y-6">
           
           {weakestTense && weakestTense.score < 85 && report?.recommendations && report.recommendations.length > 0 && (
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-4 rounded-3xl flex flex-col md:flex-row items-center gap-6 shadow-sm">
-              <div className="text-4xl bg-surface w-16 h-16 rounded-2xl flex shrink-0 items-center justify-center shadow-inner">
-                💡
-              </div>
-              <div className="flex-1 text-center md:text-left">
-                <h4 className="text-amber-900 font-bold text-lg">
-                  Sugerencia de Práctica
-                </h4>
-                <p className="text-amber-800 text-sm mt-1 leading-relaxed">
-                  Tu dominio de{" "}
-                  <span className="font-black underline decoration-amber-400 underline-offset-4">
-                    {weakestTense.name}
-                  </span>{" "}
-                  es de solo {weakestTense.score}%.
-                    <span className="block mt-2 font-medium text-amber-900/80 italic">
+            <GlassCard theme="dark" className="border-amber-400/30 bg-amber-500/10">
+              <div className="flex flex-col md:flex-row items-center gap-6">
+                <div className="text-3xl bg-amber-500/20 border border-amber-400/30 w-14 h-14 rounded-2xl flex shrink-0 items-center justify-center shadow-inner">
+                  💡
+                </div>
+                <div className="flex-1 text-center md:text-left">
+                  <h4 className="text-amber-200 font-bold text-lg">
+                    Sugerencia de Práctica
+                  </h4>
+                  <p className="text-amber-100/90 text-sm mt-1 leading-relaxed">
+                    Tu dominio de{" "}
+                    <span className="font-black underline decoration-amber-400 underline-offset-4">
+                      {weakestTense.name}
+                    </span>{" "}
+                    es de solo {weakestTense.score}%.
+                    <span className="block mt-2 font-medium text-amber-200/80 italic">
                       💡 Tip de la IA: {report.recommendations[0]}
                     </span>
-                  )
-                </p>
+                  </p>
+                </div>
               </div>
-            </div>
+            </GlassCard>
           )}
 
-          <div className="bg-surface p-8 rounded-3xl shadow-sm border border-border">
-            <h3 className="text-xl font-bold text-primary mb-8 flex items-center gap-2">
+          <GlassCard theme="dark" className="p-8">
+            <h3 className="text-xl font-bold text-white mb-8 flex items-center gap-2">
               Puntuación y Dominio por Tiempo Verbal
             </h3>
 
             {stats.length === 0 ? (
-              <div className="col-span-2 py-12 text-center border-2 border-dashed border-border rounded-3xl bg-background">
-                <p className="text-text-muted font-medium">
+              <div className="col-span-2 py-12 text-center border border-dashed border-white/10 rounded-2xl bg-slate-900/40">
+                <p className="text-slate-400 font-medium text-sm">
                   Aún no hay datos para mostrar gráficas. ¡Haz tu primer ejercicio!
                 </p>
               </div>
             ) : (
               <div className="space-y-8">
-                <div className="h-72 w-full rounded-2xl border border-border bg-background p-4">
+                <div className="h-72 w-full rounded-2xl border border-white/10 bg-slate-950/40 p-4 backdrop-blur-md">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartStats} margin={{ top: 16, right: 16, left: 0, bottom: 12 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#94a3b833" />
-                      <XAxis dataKey="tense" tick={{ fill: "#64748b", fontSize: 12 }} />
-                      <YAxis domain={[0, 100]} tick={{ fill: "#64748b", fontSize: 12 }} />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="score" name="Maestría (%)" fill="#0ea5e9" radius={[8, 8, 0, 0]} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
+                      <XAxis dataKey="tense" tick={{ fill: "#94a3b8", fontSize: 12 }} />
+                      <YAxis domain={[0, 100]} tick={{ fill: "#94a3b8", fontSize: 12 }} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "12px", color: "#fff" }}
+                      />
+                      <Legend wrapperStyle={{ paddingTop: "8px" }} />
+                      <Bar dataKey="score" name="Maestría (%)" fill="#38bdf8" radius={[8, 8, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
 
                 {chartSessions.length > 1 && (
-                  <div className="h-72 w-full rounded-2xl border border-border bg-background p-4">
+                  <div className="h-72 w-full rounded-2xl border border-white/10 bg-slate-950/40 p-4 backdrop-blur-md">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={chartSessions} margin={{ top: 16, right: 16, left: 0, bottom: 12 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#94a3b833" />
-                        <XAxis dataKey="sesion" tick={{ fill: "#64748b", fontSize: 12 }} />
-                        <YAxis domain={[0, 100]} tick={{ fill: "#64748b", fontSize: 12 }} />
-                        <Tooltip />
-                        <Legend />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
+                        <XAxis dataKey="sesion" tick={{ fill: "#94a3b8", fontSize: 12 }} />
+                        <YAxis domain={[0, 100]} tick={{ fill: "#94a3b8", fontSize: 12 }} />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "12px", color: "#fff" }}
+                        />
+                        <Legend wrapperStyle={{ paddingTop: "8px" }} />
                         <Line
                           type="monotone"
                           dataKey="puntaje"
                           name="Evolución"
-                          stroke="#2563eb"
+                          stroke="#60a5fa"
                           strokeWidth={3}
-                          dot={{ r: 3 }}
-                          activeDot={{ r: 6 }}
+                          dot={{ r: 4, fill: "#3b82f6" }}
+                          activeDot={{ r: 7 }}
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -313,27 +324,32 @@ export default function DashboardPage() {
                 </div>
               </div>
             )}
-          </div>
+          </GlassCard>
         </div>
 
+        {/* Columna Derecha (1/3): Gamificación y Tareas */}
         <div className="space-y-6">
+          
+          {/* Gamificación */}
           {gamification && (
-            <div className="bg-surface p-6 rounded-3xl shadow-sm border border-border h-fit">
+            <GlassCard theme="dark" className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-primary">🔥 Gamificación</h3>
-                <span className="text-[10px] font-black text-indigo-700 bg-indigo-100 px-2 py-1 rounded-full uppercase">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  🔥 Gamificación
+                </h3>
+                <span className="text-[10px] font-black text-sky-300 bg-sky-500/20 border border-sky-400/30 px-2 py-0.5 rounded-full uppercase">
                   Streaks
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="rounded-2xl border border-border bg-background p-3 text-center">
-                  <p className="text-[10px] uppercase tracking-wider text-text-muted font-bold">Racha Actual</p>
-                  <p className="text-2xl font-black text-primary">{gamification.current_streak}</p>
+                <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-3 text-center">
+                  <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Racha Actual</p>
+                  <p className="text-2xl font-black text-sky-400">{gamification.current_streak}</p>
                 </div>
-                <div className="rounded-2xl border border-border bg-background p-3 text-center">
-                  <p className="text-[10px] uppercase tracking-wider text-text-muted font-bold">Mejor Racha</p>
-                  <p className="text-2xl font-black text-primary">{gamification.longest_streak}</p>
+                <div className="rounded-2xl border border-white/10 bg-slate-950/40 p-3 text-center">
+                  <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Mejor Racha</p>
+                  <p className="text-2xl font-black text-sky-400">{gamification.longest_streak}</p>
                 </div>
               </div>
 
@@ -341,30 +357,31 @@ export default function DashboardPage() {
                 {gamification.badges.map((badge) => (
                   <div
                     key={badge.key}
-                    className={`rounded-xl border px-3 py-2 text-sm font-semibold ${
+                    className={`rounded-xl border px-3 py-2 text-sm font-medium ${
                       badge.unlocked
-                        ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                        : "border-slate-200 bg-slate-50 text-slate-500"
+                        ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-200"
+                        : "border-white/10 bg-slate-950/20 text-slate-500"
                     }`}
                   >
                     {badge.unlocked ? "✅" : "🔒"} {badge.label}
                   </div>
                 ))}
               </div>
-            </div>
+            </GlassCard>
           )}
 
+          {/* Áreas de Mejora */}
           {report?.weaknesses && report.weaknesses.length > 0 && (
-            <div className="bg-surface p-6 rounded-3xl shadow-sm border border-border h-fit">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-primary">
+            <GlassCard theme="dark" className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   🚨 Áreas de Mejora
                 </h3>
-                <span className="text-[10px] font-black text-rose-700 bg-rose-100 px-2 py-1 rounded-full uppercase">
+                <span className="text-[10px] font-black text-rose-300 bg-rose-500/20 border border-rose-500/30 px-2 py-0.5 rounded-full uppercase">
                   IA Report
                 </span>
               </div>
-              <p className="text-xs text-text-muted mb-6 leading-relaxed">
+              <p className="text-xs text-slate-300 mb-4 leading-relaxed">
                 La IA ha identificado estas categorías como tus puntos más débiles. ¡Enfócate en ellas!
               </p>
               {report.weaknesses.map((weakness, index) => (
@@ -375,83 +392,78 @@ export default function DashboardPage() {
                   count={weakness.error_count}
                 />
               ))}
-            </div>
+            </GlassCard>
           )}
-          <div className="bg-surface p-6 rounded-3xl shadow-sm border border-border h-fit">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-primary">
+
+          {/* Historial de Sesiones */}
+          <GlassCard theme="dark" className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 📝 Reportes
               </h3>
-              <span className="text-[10px] font-black text-teal-700 bg-teal-100 px-2 py-1 rounded-full uppercase">
+              <span className="text-[10px] font-black text-sky-300 bg-sky-500/20 border border-sky-400/30 px-2 py-0.5 rounded-full uppercase">
                 Historial
               </span>
             </div>
 
-            <p className="text-xs text-text-muted mb-6 leading-relaxed">
+            <p className="text-xs text-slate-300 mb-4 leading-relaxed">
               Haz clic en tus sesiones recientes para ver la corrección y el análisis detallado de tu profesor IA.
             </p>
 
-<div className={`space-y-3 transition-all duration-300 ${mostrarTodos ? "max-h-72 overflow-y-auto pr-2 custom-scrollbar" : ""}`}>
-  {historial.length > 0 ? (
-    displayedHistorial.map((sesion) => (
-      <Link 
-        key={sesion.id} 
-        href={`/sessions/ejercicio?id=${sesion.id}`}
-      >
-        <div className="px-4 py-2 rounded-2xl border border-border bg-background hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer flex justify-between items-center group mb-2">
-          <div className="flex flex-col">
-            <span className="font-bold text-primary capitalize text-sm group-hover:text-menu-active transition-colors">
-              {sesion.tense}
-            </span>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-[10px] font-bold uppercase text-text-muted bg-surface px-1.5 py-0.5 rounded border border-border">
-                {sesion.modulo}
-              </span>
-              <span className="text-[10px] text-text-muted">
-                {new Date(sesion.fecha).toLocaleDateString("es-ES", { day: 'numeric', month: 'short' })}
-              </span>
+            <div className={`space-y-3 transition-all duration-300 ${mostrarTodos ? "max-h-72 overflow-y-auto pr-2 custom-scrollbar" : ""}`}>
+              {historial.length > 0 ? (
+                displayedHistorial.map((sesion) => (
+                  <Link 
+                    key={sesion.id} 
+                    href={`/sessions/ejercicio?id=${sesion.id}`}
+                  >
+                    <div className="px-4 py-3 rounded-2xl border border-white/10 bg-slate-950/40 hover:border-sky-400/40 hover:bg-white/10 transition-all cursor-pointer flex justify-between items-center group mb-2">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-white capitalize text-sm group-hover:text-sky-300 transition-colors">
+                          {sesion.tense}
+                        </span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] font-bold uppercase text-slate-300 bg-white/10 px-1.5 py-0.5 rounded border border-white/10">
+                            {sesion.modulo}
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            {new Date(sesion.fecha).toLocaleDateString("es-ES", { day: 'numeric', month: 'short' })}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className={`text-sm font-black ${sesion.puntaje_total >= 60 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {sesion.puntaje_total} pts
+                        </span>
+                        <span className="text-lg opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-sky-400">
+                          →
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <div className="py-8 text-center bg-slate-950/40 rounded-2xl border border-white/10">
+                  <p className="text-slate-400 text-sm font-medium">
+                    Aún no tienes sesiones. ¡Haz tu primer ejercicio!
+                  </p>
+                </div>
+              )}
             </div>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <span className={`text-sm font-black ${sesion.puntaje_total >= 60 ? 'text-green-600' : 'text-rose-600'}`}>
-              {sesion.puntaje_total} pts
-            </span>
-            <span className="text-lg opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-menu-active">
-              →
-            </span>
-          </div>
-        </div>
-      </Link>
-    ))
-  ) : (
-    <div className="py-8 text-center bg-background rounded-2xl border border-border">
-      <p className="text-text-muted text-sm font-medium">
-        Aún no tienes sesiones. ¡Haz tu primer ejercicio!
-      </p>
-    </div>
-  )}
-</div>
 
-{historial.length > 4 && (
-  <div className="mt-4 pt-2 border-t border-border text-center">
-    <button
-      onClick={() => setMostrarTodos(!mostrarTodos)}
-      aria-expanded={mostrarTodos}
-      aria-controls="historial-list"
-      className="text-xs font-bold text-menu-active hover:underline underline-offset-4 transition-colors"
-    >
-      {mostrarTodos ? "▲ Mostrar menos" : `▼ Ver todos (${historial.length})`}
-    </button>
-  </div>
-)}                        
-            {historial.length > 0 && historial.length <= 4 && (
-               <div className="mt-6 pt-4 border-t border-border text-center">
-                 <p className="text-text-muted text-[11px] leading-relaxed italic">
-                   Estas son todas tus sesiones hasta ahora.
-                 </p>
-               </div>
-            )}
-          </div>
+            {historial.length > 4 && (
+              <div className="mt-4 pt-3 border-t border-white/10 text-center">
+                <button
+                  onClick={() => setMostrarTodos(!mostrarTodos)}
+                  aria-expanded={mostrarTodos}
+                  className="text-xs font-bold text-sky-400 hover:text-sky-300 transition-colors"
+                >
+                  {mostrarTodos ? "▲ Mostrar menos" : `▼ Ver todos (${historial.length})`}
+                </button>
+              </div>
+            )}                        
+          </GlassCard>
+
         </div>
       </div>
 
@@ -460,9 +472,8 @@ export default function DashboardPage() {
   );
 }
 
-
 const getColor = (name: string) => {
-  const colors = ["bg-blue-500", "bg-teal-500", "bg-indigo-500", "bg-purple-500", "bg-pink-500"];
+  const colors = ["bg-sky-400", "bg-teal-400", "bg-indigo-400", "bg-purple-400", "bg-pink-400"];
   return colors[name.length % colors.length];
 };
 
@@ -473,15 +484,15 @@ const getSeverity = (masteryLevel: number) => {
 };
 
 const StatBadge = ({ label, value, icon }: { label: string; value: string; icon: string }) => (
-  <div className="bg-surface px-6 py-4 rounded-3xl shadow-sm border border-border flex items-center gap-4 hover:shadow-md transition-shadow">
-    <div className="text-3xl bg-background w-12 h-12 flex shrink-0 items-center justify-center rounded-2xl">
+  <div className="bg-slate-900/60 border border-white/10 px-5 py-2.5 rounded-2xl backdrop-blur-md flex items-center gap-3">
+    <div className="text-2xl bg-white/10 w-10 h-10 flex shrink-0 items-center justify-center rounded-xl">
       {icon}
     </div>
     <div>
-      <p className="text-[10px] uppercase font-bold text-text-muted leading-none mb-1">
+      <p className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">
         {label}
       </p>
-      <p className="text-2xl font-black text-primary tracking-tight">
+      <p className="text-xl font-black text-white tracking-tight">
         {value}
       </p>
     </div>
@@ -490,25 +501,23 @@ const StatBadge = ({ label, value, icon }: { label: string; value: string; icon:
 
 const TenseCard = ({ name, score, total, color }: { name: string; score: number; total: number; color: string }) => (
   <div className="p-2 transition-all">
-    <div className="flex justify-between items-center mb-3">
-      <span className="font-bold text-primary text-sm tracking-tight capitalize">
+    <div className="flex justify-between items-center mb-2">
+      <span className="font-bold text-white text-sm tracking-tight capitalize">
         {name}
       </span>
-      <div className="text-right">
-        <span className="text-sm font-black text-primary">{score}%</span>
-      </div>
+      <span className="text-sm font-black text-sky-400">{score}%</span>
     </div>
-    <div className="w-full bg-border/40 rounded-full h-3 overflow-hidden border border-border/50">
+    <div className="w-full bg-slate-950/60 rounded-full h-3 overflow-hidden border border-white/10">
       <div
         className={`${color} h-full rounded-full transition-all duration-1000 ease-out shadow-inner`}
         style={{ width: `${score}%` }}
       />
     </div>
-    <div className="flex justify-between mt-3">
-      <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest">
+    <div className="flex justify-between mt-2">
+      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
         Maestría
       </p>
-      <p className="text-[10px] text-text-muted font-medium italic">
+      <p className="text-[10px] text-slate-400 font-medium italic">
         {total} verbos
       </p>
     </div>
@@ -517,21 +526,19 @@ const TenseCard = ({ name, score, total, color }: { name: string; score: number;
 
 const ErrorItem = ({ text, severity, count }: { text: string; severity: string; count: number }) => {
   const colors = {
-    high: "border-l-rose-500 text-rose-700 bg-rose-50",
-    medium: "border-l-amber-500 text-amber-700 bg-amber-50",
-    low: "border-l-blue-500 text-blue-700 bg-blue-50",
+    high: "border-l-rose-500 text-rose-200 bg-rose-500/10 border-white/10",
+    medium: "border-l-amber-500 text-amber-200 bg-amber-500/10 border-white/10",
+    low: "border-l-sky-500 text-sky-200 bg-sky-500/10 border-white/10",
   };
   
   return (
     <div
-      className={`px-4 py-3 rounded-2xl border-l-4 text-[13px] font-bold flex justify-between items-center mb-2 ${colors[severity as keyof typeof colors]}`}
+      className={`px-4 py-2.5 rounded-xl border border-l-4 text-[13px] font-bold flex justify-between items-center mb-2 backdrop-blur-md ${colors[severity as keyof typeof colors]}`}
     >
       <span className="truncate pr-2 capitalize">{text}</span>
-      <div className="flex items-center gap-2 shrink-0">
-        <span className="bg-white/60 px-2 py-0.5 rounded-lg text-[10px] shadow-sm text-slate-800">
-          {count} fallos
-        </span>
-      </div>
+      <span className="bg-white/10 px-2 py-0.5 rounded-md text-[10px] text-white">
+        {count} fallos
+      </span>
     </div>
   );
 };

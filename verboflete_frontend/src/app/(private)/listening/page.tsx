@@ -3,6 +3,7 @@
 import { getClientToken } from "@/lib/authToken";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { GlassCard } from "@/components/GlassCard";
 
 interface Opcion {
   id: string;
@@ -21,7 +22,6 @@ interface EjercicioAudio {
 export default function ListeningPage() {
   const router = useRouter();
   
-  // Estados de control
   const [ejercicio, setEjercicio] = useState<EjercicioAudio | null>(null);
   const [cargando, setCargando] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
@@ -30,10 +30,8 @@ export default function ListeningPage() {
   const [feedback, setFeedback] = useState<string>("");
   const [esCorrecto, setEsCorrecto] = useState<boolean>(false);
   
-  // Fase de configuración
   const [isConfiguring, setIsConfiguring] = useState<boolean>(true);
 
-  // Configuración inicial (puedes adaptarla según los estados globales de tu app)
   const [config, setConfig] = useState({
     nivel: "B1",
     contexto: "",
@@ -52,7 +50,6 @@ export default function ListeningPage() {
     }
   }, [velocidadAudio, ejercicio]);
 
-  // Llama al nuevo endpoint del backend que creamos para las opciones múltiples
   const cargarNuevoEjercicio = async () => {
     setCargando(true);
     setError("");
@@ -96,7 +93,6 @@ export default function ListeningPage() {
     }
   };
 
-  // Envía la opción elegida al nuevo calificador del backend
   const enviarCalificacion = async () => {
     if (!opcionSeleccionada || !ejercicio) return;
 
@@ -129,34 +125,31 @@ export default function ListeningPage() {
     }
   };
 
-  const terminarSesion = () => {
-    router.push("/dashboard"); 
-  };
-
   if (isConfiguring) {
     return (
-      <div className="max-w-2xl mx-auto p-4 space-y-6 animate-in fade-in duration-500">
-        {/* Encabezado */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-black text-primary mt-4 tracking-tight">🎧 Práctica de Comprensión Auditiva</h1>
-          <p className="text-text-muted mt-2">Configura tu sesión. Entrena tu oído con audios generados por Inteligencia Artificial.</p>
-        </div>
-        <ConfiguradorEjercicio 
-          config={config} 
-          setConfig={setConfig} 
-          onStart={() => {
-            setIsConfiguring(false);
-            cargarNuevoEjercicio();
-          }} 
-        />
+      <div className="max-w-2xl mx-auto space-y-6 font-sans animate-in fade-in duration-500">
+        <GlassCard className="p-6 md:p-8">
+          <div className="mb-6">
+            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">🎧 Práctica de Comprensión Auditiva</h1>
+            <p className="text-slate-600 dark:text-slate-300 text-sm mt-2">Configura tu sesión. Entrena tu oído con audios generados por Inteligencia Artificial.</p>
+          </div>
+          <ConfiguradorEjercicio 
+            config={config} 
+            setConfig={setConfig} 
+            onStart={() => {
+              setIsConfiguring(false);
+              cargarNuevoEjercicio();
+            }} 
+          />
+        </GlassCard>
       </div>
     );
   }
 
   if (cargando) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-text-muted">
-        <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-slate-600 dark:text-slate-300">
+        <div className="w-12 h-12 border-4 border-sky-500 dark:border-sky-400 border-t-transparent rounded-full animate-spin mb-4"></div>
         <p className="font-medium text-sm">Generando pregunta de opción múltiple...</p>
       </div>
     );
@@ -164,11 +157,11 @@ export default function ListeningPage() {
 
   if (error || !ejercicio) {
     return (
-      <div className="p-8 text-center max-w-md mx-auto">
-        <div className="bg-rose-50 text-rose-700 p-4 rounded-2xl border border-rose-200 mb-4">
-          {error || "Error al cargar el ejercicio."}
-        </div>
-        <button onClick={cargarNuevoEjercicio} className="px-4 py-2 bg-rose-600 text-white rounded-xl font-bold text-sm">
+      <div className="p-8 text-center max-w-md mx-auto font-sans">
+        <GlassCard className="border-rose-500/30 bg-rose-500/10 dark:bg-rose-500/20 p-6 mb-4">
+          <p className="text-rose-800 dark:text-rose-200 text-sm">{error || "Error al cargar el ejercicio."}</p>
+        </GlassCard>
+        <button onClick={cargarNuevoEjercicio} className="px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold text-sm cursor-pointer shadow-lg">
           Intentar de nuevo
         </button>
       </div>
@@ -176,29 +169,27 @@ export default function ListeningPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-4 space-y-6 animate-in fade-in duration-500">
+    <div className="max-w-2xl mx-auto space-y-6 font-sans animate-in fade-in duration-500">
       
-      {/* Encabezado */}
-      <div className="flex justify-between items-center border-b border-border pb-4">
+      <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/10 pb-4">
         <div>
-          <span className="text-[10px] font-black text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
+          <span className="text-[10px] font-black text-sky-700 dark:text-sky-300 bg-sky-500/10 dark:bg-sky-500/20 border border-sky-500/20 dark:border-sky-400/30 px-3 py-1 rounded-full uppercase tracking-wider">
             Comprensión Auditiva ({config.nivel})
           </span>
-          <h1 className="text-2xl font-black text-primary mt-1">Escucha y Selecciona</h1>
+          <h1 className="text-2xl font-black text-slate-900 dark:text-white mt-2">Escucha y Selecciona</h1>
         </div>
         <button 
           onClick={() => {
             setIsConfiguring(true);
             setConfig((prev) => ({ ...prev, contexto: "" })); 
           }} 
-          className="px-3 py-1.5 mt-5 text-xs font-bold bg-rose-50 text-rose-600 rounded-xl border border-rose-100 hover:bg-rose-100 transition-all"
+          className="px-3.5 py-1.5 text-xs font-bold bg-rose-500/10 dark:bg-rose-500/20 hover:bg-rose-500/20 dark:hover:bg-rose-500/30 text-rose-700 dark:text-rose-200 rounded-xl border border-rose-500/20 dark:border-rose-500/30 transition-all cursor-pointer"
         >
           ✕ Salir
         </button>
       </div>
 
-      {/* Reproductor de Audio */}
-      <div className="bg-surface p-6 rounded-3xl border border-border shadow-xs flex flex-col items-center space-y-3">
+      <GlassCard className="p-6 flex flex-col items-center space-y-4">
         <audio 
           ref={audioRef} 
           src={`data:audio/mp3;base64,${ejercicio.urlAudio}`} 
@@ -206,13 +197,13 @@ export default function ListeningPage() {
         />
         <button
           onClick={alternarAudio}
-          className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl transition-all shadow-xs active:scale-95 ${
-            reproduciendo ? "bg-amber-500 text-white animate-pulse" : "bg-teal-500 text-white hover:bg-teal-600"
+          className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl transition-all shadow-lg cursor-pointer active:scale-95 ${
+            reproduciendo ? "bg-amber-500 text-white animate-pulse shadow-amber-500/40" : "bg-sky-500 text-white hover:bg-sky-400 shadow-sky-500/40"
           }`}
         >
           {reproduciendo ? "⏸" : "▶"}
         </button>
-        <span className="text-[11px] text-text-muted font-bold uppercase tracking-wider">
+        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
           {reproduciendo ? "Escuchando..." : "Reproducir audio"}
         </span>
 
@@ -221,40 +212,38 @@ export default function ListeningPage() {
             <button
               key={speed}
               onClick={() => setVelocidadAudio(speed)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
                 velocidadAudio === speed
-                  ? "bg-primary text-white border-primary"
-                  : "bg-background text-text-muted border-border hover:border-primary/60"
+                  ? "bg-sky-500 text-white border-sky-400"
+                  : "bg-slate-100 dark:bg-slate-950/40 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20"
               }`}
             >
               {speed}x
             </button>
           ))}
         </div>
-      </div>
+      </GlassCard>
 
-      {/* Cuestionario */}
-      <div className="bg-surface p-6 rounded-3xl border border-border shadow-xs space-y-4">
-        <h3 className="text-base font-bold text-primary flex items-start gap-2">
-          <span className="text-teal-500">❓</span> {ejercicio.pregunta}
+      <GlassCard className="p-6 space-y-4">
+        <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-start gap-2">
+          <span className="text-sky-500 dark:text-sky-400">❓</span> {ejercicio.pregunta}
         </h3>
 
-        {/* Mapeo de Opciones */}
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {ejercicio.opciones.map((opcion) => {
             const esSeleccionada = opcionSeleccionada === opcion.id;
-            let clasesBoton = "border-border bg-background hover:border-teal-400 text-primary";
+            let clasesBoton = "border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-950/40 hover:border-sky-500/40 dark:hover:border-sky-400/40 text-slate-800 dark:text-slate-200";
 
             if (esSeleccionada) {
-              clasesBoton = "border-teal-500 bg-teal-50/30 text-teal-950 ring-2 ring-teal-500/10";
+              clasesBoton = "border-sky-500 dark:border-sky-400 bg-sky-500/10 dark:bg-sky-500/30 text-slate-900 dark:text-white ring-2 ring-sky-400/40";
             }
             if (calificado) {
               if (opcion.id === ejercicio.idOpcionCorrecta) {
-                clasesBoton = "border-green-500 bg-green-50 text-green-900";
+                clasesBoton = "border-emerald-500 dark:border-emerald-400 bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 font-bold";
               } else if (esSeleccionada && !esCorrecto) {
-                clasesBoton = "border-rose-500 bg-rose-50 text-rose-900";
+                clasesBoton = "border-rose-500 dark:border-rose-400 bg-rose-500/10 dark:bg-rose-500/20 text-rose-800 dark:text-rose-200 font-bold";
               } else {
-                clasesBoton = "opacity-40 border-border bg-background text-text-muted pointer-events-none";
+                clasesBoton = "opacity-40 border-slate-200 dark:border-white/5 bg-slate-100 dark:bg-slate-950/20 text-slate-400 dark:text-slate-500 pointer-events-none";
               }
             }
 
@@ -263,10 +252,10 @@ export default function ListeningPage() {
                 key={opcion.id}
                 disabled={calificado}
                 onClick={() => setOpcionSeleccionada(opcion.id)}
-                className={`w-full text-left px-4 py-3 rounded-xl border-2 font-medium text-sm transition-all flex items-center gap-3 ${clasesBoton}`}
+                className={`w-full text-left px-4 py-3 rounded-xl border font-medium text-sm transition-all flex items-center gap-3 cursor-pointer ${clasesBoton}`}
               >
                 <span className={`w-6 h-6 rounded-md flex items-center justify-center font-black text-xs shrink-0 ${
-                  esSeleccionada ? "bg-teal-500 text-white" : "bg-neutral-100 text-neutral-500"
+                  esSeleccionada ? "bg-sky-500 text-white dark:bg-sky-400 dark:text-slate-950" : "bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300"
                 }`}>
                   {opcion.id}
                 </span>
@@ -276,7 +265,6 @@ export default function ListeningPage() {
           })}
         </div>
 
-        {/* Sección de acciones e Historial Infinito */}
         <div className="pt-2">
           {!calificado ? (
             <button
@@ -284,16 +272,16 @@ export default function ListeningPage() {
               onClick={enviarCalificacion}
               className={`w-full py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all ${
                 opcionSeleccionada 
-                  ? "bg-teal-600 text-white hover:bg-teal-700 cursor-pointer shadow-xs" 
-                  : "bg-neutral-100 text-neutral-400 pointer-events-none"
+                  ? "bg-sky-500 text-white hover:bg-sky-400 cursor-pointer shadow-lg shadow-sky-950/20" 
+                  : "bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-slate-500 pointer-events-none"
               }`}
             >
               Comprobar Respuesta
             </button>
           ) : (
             <div className="space-y-3 animate-in slide-in-from-bottom-2 duration-300">
-              <div className={`p-4 rounded-xl border text-sm ${
-                esCorrecto ? "bg-green-50 border-green-200 text-green-800" : "bg-rose-50 border-rose-200 text-rose-800"
+              <div className={`p-4 rounded-xl border text-sm backdrop-blur-md ${
+                esCorrecto ? "bg-emerald-500/10 dark:bg-emerald-500/20 border-emerald-500/30 text-emerald-800 dark:text-emerald-200" : "bg-rose-500/10 dark:bg-rose-500/20 border-rose-500/30 text-rose-800 dark:text-rose-200"
               }`}>
                 <p className="font-bold text-sm">
                   {esCorrecto ? "🎉 ¡Correcto!" : "❌ Respuesta incorrecta"}
@@ -301,22 +289,20 @@ export default function ListeningPage() {
                 <p className="text-xs mt-1.5 leading-relaxed font-normal">{feedback}</p>
               </div>
 
-              {/* El botón de generación infinita */}
               <button
                 onClick={cargarNuevoEjercicio}
-                className="w-full py-3.5 bg-primary text-white font-bold text-sm rounded-xl hover:bg-primary/90 transition-all shadow-xs"
+                className="w-full py-3.5 bg-sky-500 text-white font-bold text-sm rounded-xl hover:bg-sky-400 transition-all shadow-lg shadow-sky-950/20 cursor-pointer"
               >
                 🔄 Siguiente Ejercicio
               </button>
             </div>
           )}
         </div>
-      </div>
+      </GlassCard>
     </div>
   );
 }
 
-// --- Interfaces Auxiliares ---
 interface Configuracion {
   nivel: string;
   contexto: string;
@@ -331,22 +317,21 @@ interface ConfiguradorProps {
   onStart: () => void;
 }
 
-// --- Componente de Configuración Extraído ---
 function ConfiguradorEjercicio({ config, setConfig, onStart }: ConfiguradorProps) {
   return (
-    <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-top-2 duration-300 bg-white p-5 rounded-xl border border-border shadow-sm">
-      <label className="text-lg font-bold text-primary">¿Qué quieres practicar hoy?</label>
+    <div className="flex flex-col gap-4">
+      <label className="text-lg font-bold text-slate-900 dark:text-white">¿Qué quieres practicar hoy?</label>
       
       <input 
         placeholder="Ej: Viajes, Entrevista de trabajo, Un día en París..." 
-        className="border-2 border-border rounded-lg px-4 py-3 text-lg w-full outline-none focus:border-menu-active transition-colors"
+        className="border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950/40 rounded-xl px-4 py-3 text-slate-900 dark:text-white text-base w-full outline-none focus:border-sky-500 dark:focus:border-sky-400 placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-sm"
         value={config.contexto}
         onChange={(e) => setConfig({ ...config, contexto: e.target.value })}
       />
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <select 
-          className="border-2 border-border rounded-lg px-4 py-2 outline-none focus:border-menu-active bg-white cursor-pointer"
+          className="border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 rounded-xl px-4 py-2.5 outline-none focus:border-sky-500 dark:focus:border-sky-400 text-slate-900 dark:text-white cursor-pointer text-sm shadow-sm"
           value={config.nivel}
           onChange={(e) => setConfig({ ...config, nivel: e.target.value })}
         >
@@ -358,7 +343,7 @@ function ConfiguradorEjercicio({ config, setConfig, onStart }: ConfiguradorProps
         </select>
         
         <select 
-          className="border-2 border-border rounded-lg px-4 py-2 outline-none focus:border-menu-active bg-white cursor-pointer"
+          className="border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 rounded-xl px-4 py-2.5 outline-none focus:border-sky-500 dark:focus:border-sky-400 text-slate-900 dark:text-white cursor-pointer text-sm shadow-sm"
           value={config.grupo_verbos}
           onChange={(e) => setConfig({ ...config, grupo_verbos: e.target.value })}
         >
@@ -370,7 +355,7 @@ function ConfiguradorEjercicio({ config, setConfig, onStart }: ConfiguradorProps
         </select>
         
         <select 
-          className="border-2 border-border rounded-lg px-4 py-2 outline-none focus:border-menu-active bg-white cursor-pointer font-medium text-primary"
+          className="border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 rounded-xl px-4 py-2.5 outline-none focus:border-sky-500 dark:focus:border-sky-400 text-slate-900 dark:text-white cursor-pointer text-sm font-medium shadow-sm"
           value={config.mood}
           onChange={(e) => setConfig({ ...config, mood: e.target.value })}
         >
@@ -381,7 +366,7 @@ function ConfiguradorEjercicio({ config, setConfig, onStart }: ConfiguradorProps
         </select>
         
         <select 
-          className="border-2 border-border rounded-lg px-4 py-2 outline-none focus:border-menu-active bg-white cursor-pointer font-medium text-primary"
+          className="border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 rounded-xl px-4 py-2.5 outline-none focus:border-sky-500 dark:focus:border-sky-400 text-slate-900 dark:text-white cursor-pointer text-sm font-medium shadow-sm"
           value={config.tense}
           onChange={(e) => setConfig({ ...config, tense: e.target.value })}
         >
@@ -394,12 +379,12 @@ function ConfiguradorEjercicio({ config, setConfig, onStart }: ConfiguradorProps
         </select>
       </div>
       
-      <div className="flex flex-col sm:flex-row items-center justify-between mt-2 pt-4 border-t border-border/50 gap-4">
-        <p className="text-sm text-text-muted">Define el tema, tu nivel, los verbos y el tiempo gramatical para la IA.</p>
+      <div className="flex flex-col sm:flex-row items-center justify-between mt-2 pt-4 border-t border-slate-200 dark:border-white/10 gap-4">
+        <p className="text-xs text-slate-600 dark:text-slate-300">Define el tema, tu nivel, los verbos y el tiempo gramatical para la IA.</p>
         <button 
           onClick={onStart}
           disabled={!config.contexto || config.contexto.trim() === ""}
-          className="w-full sm:w-auto bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-lg transition-all shadow-md"
+          className="w-full sm:w-auto bg-sky-500 hover:bg-sky-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-sky-950/20 cursor-pointer"
         >
           Generar Ejercicio
         </button>
