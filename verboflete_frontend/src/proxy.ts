@@ -10,6 +10,7 @@ function canonicalizeLegacyPath(pathname: string, role: AppRole) {
   }
 
   if (role === 'estudiante') {
+    if (cleanPath === '/alumno') return '/alumno/dashboard';
     if (cleanPath === '/tareas') return '/alumno/tareas';
     if (cleanPath === '/calendario') return '/alumno/calendario';
     if (cleanPath === '/sessions/ejercicio') return '/alumno/habla';

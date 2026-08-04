@@ -8,7 +8,7 @@ const ROLE_ROUTE_PREFIXES: Record<AppRole, string[]> = {
 };
 
 const ROLE_HOME: Record<AppRole, string> = {
-  estudiante: "/alumno/tareas",
+  estudiante: "/alumno/dashboard",
   tutor: "/maestro/tareas-generador",
   padres: "/padre/dashboard",
   admin: "/admin/usuarios",

@@ -5,6 +5,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { GlassCard } from "@/components/GlassCard";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL?.startsWith("http")
+  ? process.env.NEXT_PUBLIC_API_URL
+  : "http://127.0.0.1:8000/api";
+
 interface Usuario {
   id: number;
   nombre: string;
@@ -45,27 +49,26 @@ export default function AdminGruposPage() {
     }
 
     try {
+      const headers = { Authorization: `Bearer ${token}` };
       const [gruposRes, usuariosRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/grupos`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/usuarios`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
+        fetch(`${API_BASE}/grupos/`, { headers }),
+        fetch(`${API_BASE}/usuarios/?limit=1000`, { headers }),
       ]);
 
       if (!gruposRes.ok || !usuariosRes.ok) {
-        throw new Error("Error al cargar los datos iniciales.");
+        const gruposErr = await gruposRes.json().catch(() => ({}));
+        const usuariosErr = await usuariosRes.json().catch(() => ({}));
+        throw new Error(gruposErr.detail || usuariosErr.detail || "Error al cargar los datos iniciales.");
       }
 
-      const gruposData = await gruposRes.json();
-      const usuariosData = await usuariosRes.json();
+      const gruposData: Grupo[] = await gruposRes.json();
+      const usuariosData: Usuario[] = await usuariosRes.json();
 
       setGrupos(gruposData);
       setUsuarios(usuariosData);
 
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error al cargar los datos iniciales.");
     } finally {
       setLoading(false);
     }
@@ -80,18 +83,23 @@ export default function AdminGruposPage() {
     setError(null);
     const token = getClientToken();
 
+    if (!token) {
+      setError("No autenticado.");
+      return;
+    }
+
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/grupos`, {
+      const res = await fetch(`${API_BASE}/grupos/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ nombre: nombreGrupo, descripcion: descripcionGrupo })
       });
 
       if (!res.ok) {
-        const errData = await res.json();
+        const errData = await res.json().catch(() => ({}));
         throw new Error(errData.detail || "No se pudo crear el grupo.");
       }
 
@@ -99,8 +107,8 @@ export default function AdminGruposPage() {
       setDescripcionGrupo('');
       await fetchAllData();
 
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "No se pudo crear el grupo.");
     }
   };
 
@@ -109,6 +117,11 @@ export default function AdminGruposPage() {
     const token = getClientToken();
     const usuarioId = rol === 'tutor' ? tutorSeleccionado : alumnoSeleccionado;
 
+    if (!token) {
+      setError("No autenticado.");
+      return;
+    }
+
     if (!grupoSeleccionado || !usuarioId) {
       setError("Por favor, selecciona un grupo y un usuario.");
       return;
@@ -116,17 +129,17 @@ export default function AdminGruposPage() {
 
     try {
       const endpoint = rol === 'tutor' ? 'tutores' : 'alumnos';
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/grupos/${grupoSeleccionado}/${endpoint}`, {
+      const res = await fetch(`${API_BASE}/grupos/${grupoSeleccionado}/${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ usuario_id: parseInt(usuarioId) })
       });
 
       if (!res.ok) {
-        const errData = await res.json();
+        const errData = await res.json().catch(() => ({}));
         throw new Error(errData.detail || `No se pudo asignar el ${rol}.`);
       }
 
@@ -134,8 +147,8 @@ export default function AdminGruposPage() {
       setAlumnoSeleccionado('');
       await fetchAllData();
 
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : `No se pudo asignar el ${rol}.`);
     }
   };
 

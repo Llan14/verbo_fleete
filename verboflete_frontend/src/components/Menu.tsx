@@ -30,6 +30,7 @@ type MenuItem = { name: string; href: string; icon: React.ComponentType<{ classN
 
 const MENU_BY_ROLE: Record<AppRole, MenuItem[]> = {
   estudiante: [
+    { name: "Dashboard", href: "/alumno/dashboard", icon: FaChartLine },
     { name: "Lectura", href: "/alumno/lectura", icon: FaBook },
     { name: "Gramática", href: "/alumno/gramatica", icon: FaBookOpen },
     { name: "Escucha", href: "/alumno/escucha", icon: FaHeadphonesSimple },
